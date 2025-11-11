@@ -4,7 +4,13 @@ from django.http import Http404, HttpResponse
 from django.urls import include, path, re_path
 from rest_framework.routers import DefaultRouter
 
-from inventory.views import DashboardView, MovementViewSet, ProductViewSet, ReportsView
+from inventory.views import (
+    DashboardView,
+    InventorySummaryView,
+    MovementViewSet,
+    ProductViewSet,
+    ReportsView,
+)
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet, basename='product')
@@ -21,6 +27,7 @@ def serve_frontend(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('api/inventory/', InventorySummaryView.as_view(), name='inventory-summary'),
     path('api/reports/', ReportsView.as_view(), name='reports'),
     path('api/', include(router.urls)),
     re_path(r'^.*$', serve_frontend, name='frontend'),

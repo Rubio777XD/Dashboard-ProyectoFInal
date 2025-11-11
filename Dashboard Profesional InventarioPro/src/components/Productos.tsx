@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Search, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Button } from './ui/button';
 import { toast } from 'sonner@2.0.3';
 import { apiFetch } from '../lib/api';
@@ -16,6 +17,7 @@ interface Product {
   id: number;
   name: string;
   code: string;
+  category: string;
   stock: number;
   low_threshold: number;
   avg_cost: number;
@@ -27,6 +29,7 @@ interface Product {
 interface ProductFormState {
   name: string;
   code: string;
+  category: string;
   stock: string;
   low_threshold: string;
   avg_cost: string;
@@ -38,9 +41,23 @@ function formatCurrency(value: number) {
   return value.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 }
 
+const CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'consoles', label: 'Consolas' },
+  { value: 'gaming_pcs', label: 'PCs gamer' },
+  { value: 'peripherals', label: 'Periféricos' },
+  { value: 'components', label: 'Componentes' },
+  { value: 'accessories', label: 'Merch & accesorios' }
+];
+
+const CATEGORY_LABELS = CATEGORY_OPTIONS.reduce<Record<string, string>>((acc, option) => {
+  acc[option.value] = option.label;
+  return acc;
+}, {});
+
 const defaultFormState: ProductFormState = {
   name: '',
   code: '',
+  category: CATEGORY_OPTIONS[0].value,
   stock: '',
   low_threshold: '',
   avg_cost: '',
@@ -55,6 +72,7 @@ export function Productos({ filter }: ProductosProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [onlyLowStock, setOnlyLowStock] = useState(filter?.filter === 'bajo-stock');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
 
   useEffect(() => {
     loadProducts();
@@ -90,6 +108,7 @@ export function Productos({ filter }: ProductosProps) {
     setFormState({
       name: product.name,
       code: product.code,
+      category: product.category,
       stock: String(product.stock),
       low_threshold: String(product.low_threshold),
       avg_cost: String(product.avg_cost),
@@ -119,6 +138,7 @@ export function Productos({ filter }: ProductosProps) {
     const payload = {
       name: formState.name,
       code: formState.code,
+      category: formState.category,
       stock: formState.stock || '0',
       low_threshold: formState.low_threshold || '0',
       avg_cost: formState.avg_cost || '0',
@@ -153,13 +173,16 @@ export function Productos({ filter }: ProductosProps) {
       if (onlyLowStock && !product.is_low_stock) {
         return false;
       }
+      if (categoryFilter && product.category !== categoryFilter) {
+        return false;
+      }
       if (!term) return true;
       return (
         product.name.toLowerCase().includes(term) ||
         product.code.toLowerCase().includes(term)
       );
     });
-  }, [products, searchTerm, onlyLowStock]);
+  }, [products, searchTerm, onlyLowStock, categoryFilter]);
 
   return (
     <div className="p-8 space-y-6" style={{ background: '#0B132B', minHeight: 'calc(100vh - 4rem)' }}>
@@ -193,7 +216,7 @@ export function Productos({ filter }: ProductosProps) {
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
         }}
       >
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="flex flex-col xl:flex-row xl:items-center gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: '#A8A8A8' }} />
             <input
@@ -210,14 +233,45 @@ export function Productos({ filter }: ProductosProps) {
               }}
             />
           </div>
-          <Button
-            variant={onlyLowStock ? 'default' : 'outline'}
-            onClick={() => setOnlyLowStock((value) => !value)}
-            className="flex items-center gap-2"
-          >
-            <AlertCircle className="w-4 h-4" />
-            {onlyLowStock ? 'Mostrando bajo stock' : 'Solo bajo stock'}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger
+                className="sm:w-56"
+                style={{
+                  background: 'rgba(58, 134, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#E0E0E0'
+                }}
+              >
+                <SelectValue placeholder="Todas las categorías" />
+              </SelectTrigger>
+              <SelectContent
+                style={{
+                  background: '#1C2541',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#E0E0E0'
+                }}
+              >
+                <SelectItem value="">
+                  Todas las categorías
+                </SelectItem>
+                {CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant={onlyLowStock ? 'default' : 'outline'}
+              onClick={() => setOnlyLowStock((value) => !value)}
+              className="flex items-center gap-2"
+            >
+              <AlertCircle className="w-4 h-4" />
+              {onlyLowStock ? 'Mostrando bajo stock' : 'Solo bajo stock'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -238,6 +292,9 @@ export function Productos({ filter }: ProductosProps) {
                 </th>
                 <th className="text-left py-4 px-4" style={{ color: '#A8A8A8', fontSize: '0.875rem', fontWeight: 500 }}>
                   Código
+                </th>
+                <th className="text-left py-4 px-4" style={{ color: '#A8A8A8', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Categoría
                 </th>
                 <th className="text-center py-4 px-4" style={{ color: '#A8A8A8', fontSize: '0.875rem', fontWeight: 500 }}>
                   Stock Actual
@@ -280,6 +337,20 @@ export function Productos({ filter }: ProductosProps) {
                       }}
                     >
                       {product.code}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span
+                      className="px-3 py-1 rounded-full"
+                      style={{
+                        background: 'rgba(58, 134, 255, 0.12)',
+                        color: '#A5B4FC',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        letterSpacing: '0.02em'
+                      }}
+                    >
+                      {CATEGORY_LABELS[product.category] ?? product.category}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-center">
@@ -379,6 +450,36 @@ export function Productos({ filter }: ProductosProps) {
                   color: '#E0E0E0'
                 }}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Categoría</Label>
+              <Select
+                value={formState.category}
+                onValueChange={(value) => setFormState((state) => ({ ...state, category: value }))}
+              >
+                <SelectTrigger
+                  style={{
+                    background: 'rgba(58, 134, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#E0E0E0'
+                  }}
+                >
+                  <SelectValue placeholder="Selecciona una categoría" />
+                </SelectTrigger>
+                <SelectContent
+                  style={{
+                    background: '#1C2541',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#E0E0E0'
+                  }}
+                >
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

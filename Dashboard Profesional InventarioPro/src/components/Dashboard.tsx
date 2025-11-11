@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DollarSign, TrendingDown, Scale, AlertTriangle, Filter } from 'lucide-react';
+import { DollarSign, TrendingDown, Scale, AlertTriangle, Package, Boxes, Wallet } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -21,6 +21,9 @@ interface DashboardResponse {
   egresos_mxn: number;
   balance_mxn: number;
   low_stock_count: number;
+  product_count: number;
+  total_stock_units: number;
+  inventory_value_mxn: number;
   usd_rate: number;
   ingresos_usd: number;
   egresos_usd: number;
@@ -48,11 +51,23 @@ interface ReportsResponse {
 
 interface MovementResponse {
   id: number;
-  product_detail: { name: string };
+  product_detail: { name: string; category?: string; code?: string };
   movement_type: 'IN' | 'OUT';
   quantity: number;
   unit_price: number;
   date: string;
+}
+
+interface MetricCard {
+  key: string;
+  title: string;
+  value: string;
+  description: string;
+  icon: typeof DollarSign;
+  color: string;
+  bgGradient: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 const circumference = 2 * Math.PI * 40;
@@ -62,6 +77,14 @@ const periodMap: Record<string, { view: 'day' | 'week' | 'month'; days: number }
   Semana: { view: 'week', days: 6 },
   Mes: { view: 'month', days: 29 },
   Rango: { view: 'month', days: 89 }
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  consoles: 'Consolas',
+  gaming_pcs: 'PCs gamer',
+  peripherals: 'Periféricos',
+  components: 'Componentes',
+  accessories: 'Merch & accesorios'
 };
 
 function formatCurrency(value: number, currency: 'MXN' | 'USD' = 'MXN') {
@@ -157,49 +180,101 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     return Math.max(0, Math.min(100, (dashboardData.balance_mxn / dashboardData.ingresos_mxn) * 100));
   }, [dashboardData]);
 
-  const metrics = useMemo(() => {
+  const financialMetrics = useMemo<MetricCard[]>(() => {
     if (!dashboardData) {
       return [];
     }
     return [
       {
-        id: 1,
-        title: 'Ingresos',
+        key: 'ventas',
+        title: 'Ventas',
         value: formatCurrency(dashboardData.ingresos_mxn, 'MXN'),
-        change: `${formatCurrency(dashboardData.ingresos_usd, 'USD')} USD`,
+        description: `${formatCurrency(dashboardData.ingresos_usd, 'USD')} USD`,
         icon: DollarSign,
         color: '#4ADE80',
-        bgGradient: 'radial-gradient(circle at top right, rgba(74, 222, 128, 0.15) 0%, transparent 70%)'
+        bgGradient: 'radial-gradient(circle at top right, rgba(74, 222, 128, 0.18) 0%, transparent 75%)',
+        actionLabel: 'Ver ventas',
+        onAction: () => onNavigate('reportes', { view: 'ingresos' })
       },
       {
-        id: 2,
-        title: 'Egresos',
+        key: 'compras',
+        title: 'Compras',
         value: formatCurrency(dashboardData.egresos_mxn, 'MXN'),
-        change: `${formatCurrency(dashboardData.egresos_usd, 'USD')} USD`,
+        description: `${formatCurrency(dashboardData.egresos_usd, 'USD')} USD`,
         icon: TrendingDown,
         color: '#F87171',
-        bgGradient: 'radial-gradient(circle at top right, rgba(248, 113, 113, 0.15) 0%, transparent 70%)'
+        bgGradient: 'radial-gradient(circle at top right, rgba(248, 113, 113, 0.18) 0%, transparent 75%)',
+        actionLabel: 'Ver compras',
+        onAction: () => onNavigate('reportes', { view: 'egresos' })
       },
       {
-        id: 3,
+        key: 'balance',
         title: 'Balance',
         value: formatCurrency(dashboardData.balance_mxn, 'MXN'),
-        change: `${formatCurrency(dashboardData.balance_usd, 'USD')} USD`,
+        description: `${formatCurrency(dashboardData.balance_usd, 'USD')} USD`,
         icon: Scale,
         color: '#4CC9F0',
-        bgGradient: 'radial-gradient(circle at top right, rgba(76, 201, 240, 0.15) 0%, transparent 70%)'
-      },
-      {
-        id: 4,
-        title: 'Bajo Stock',
-        value: `${dashboardData.low_stock_count} productos`,
-        change: `Tasa USD ${dashboardData.usd_rate.toFixed(4)}`,
-        icon: AlertTriangle,
-        color: '#FBBF24',
-        bgGradient: 'radial-gradient(circle at top right, rgba(251, 191, 36, 0.15) 0%, transparent 70%)'
+        bgGradient: 'radial-gradient(circle at top right, rgba(76, 201, 240, 0.18) 0%, transparent 75%)',
+        actionLabel: 'Ver balance',
+        onAction: () => onNavigate('reportes', { view: 'balance' })
       }
     ];
-  }, [dashboardData]);
+  }, [dashboardData, onNavigate]);
+
+  const inventoryMetrics = useMemo<MetricCard[]>(() => {
+    if (!dashboardData) {
+      return [];
+    }
+    return [
+      {
+        key: 'productos',
+        title: 'Productos',
+        value: `${dashboardData.product_count}`,
+        description: 'Catálogo gamer activo',
+        icon: Package,
+        color: '#38BDF8',
+        bgGradient: 'radial-gradient(circle at top right, rgba(59, 130, 246, 0.18) 0%, transparent 75%)',
+        actionLabel: 'Administrar',
+        onAction: () => onNavigate('productos')
+      },
+      {
+        key: 'stock',
+        title: 'Stock disponible',
+        value: `${dashboardData.total_stock_units.toLocaleString('es-MX', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2
+        })}`,
+        description: 'Unidades en inventario',
+        icon: Boxes,
+        color: '#A855F7',
+        bgGradient: 'radial-gradient(circle at top right, rgba(168, 85, 247, 0.18) 0%, transparent 75%)',
+        actionLabel: 'Ver movimientos',
+        onAction: () => onNavigate('movimientos')
+      },
+      {
+        key: 'valor_inventario',
+        title: 'Valor inventario',
+        value: formatCurrency(dashboardData.inventory_value_mxn, 'MXN'),
+        description: `Tasa USD ${dashboardData.usd_rate.toFixed(4)}`,
+        icon: Wallet,
+        color: '#F97316',
+        bgGradient: 'radial-gradient(circle at top right, rgba(249, 115, 22, 0.18) 0%, transparent 75%)',
+        actionLabel: 'Ver reportes',
+        onAction: () => onNavigate('reportes', { view: 'balance' })
+      },
+      {
+        key: 'bajo_stock',
+        title: 'Bajo stock',
+        value: `${dashboardData.low_stock_count} productos`,
+        description: 'Revisar existencias críticas',
+        icon: AlertTriangle,
+        color: '#FBBF24',
+        bgGradient: 'radial-gradient(circle at top right, rgba(251, 191, 36, 0.2) 0%, transparent 75%)',
+        actionLabel: 'Ver faltantes',
+        onAction: () => onNavigate('productos', { filter: 'bajo-stock' })
+      }
+    ];
+  }, [dashboardData, onNavigate]);
 
   if (loading) {
     return (
@@ -248,13 +323,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {financialMetrics.map((metric) => {
           const Icon = metric.icon;
           return (
             <div
-              key={metric.id}
-              className="rounded-xl p-6 transition-all duration-300 cursor-pointer border"
+              key={metric.key}
+              className="rounded-xl p-6 transition-all duration-300 border"
               style={{
                 background: '#1C2541',
                 borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -264,7 +339,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               }}
             >
               <div style={{ background: metric.bgGradient, position: 'absolute', inset: 0 }} />
-
               <div className="relative z-10 space-y-4">
                 <div className="flex items-center justify-between">
                   <div
@@ -279,17 +353,12 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   <span
                     className="px-2 py-1 rounded"
                     style={{
-                      background:
-                        metric.id === 4
-                          ? 'rgba(251, 191, 36, 0.2)'
-                          : metric.id === 2
-                          ? 'rgba(248, 113, 113, 0.2)'
-                          : 'rgba(74, 222, 128, 0.2)',
+                      background: `${metric.color}25`,
                       color: metric.color,
                       fontSize: '0.75rem'
                     }}
                   >
-                    {metric.change}
+                    {metric.description}
                   </span>
                 </div>
 
@@ -302,28 +371,88 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    if (metric.id === 1) {
-                      onNavigate('reportes', { view: 'ingresos' });
-                    } else if (metric.id === 2) {
-                      onNavigate('reportes', { view: 'egresos' });
-                    } else if (metric.id === 3) {
-                      onNavigate('reportes', { view: 'balance' });
-                    } else if (metric.id === 4) {
-                      onNavigate('productos', { filter: 'bajo-stock' });
-                    }
-                  }}
-                  className="w-full py-2 rounded-lg transition-all duration-200"
-                  style={{
-                    background: `${metric.color}15`,
-                    color: metric.color,
-                    fontSize: '0.875rem',
-                    border: `1px solid ${metric.color}40`
-                  }}
-                >
-                  Ver detalles
-                </button>
+                {metric.onAction && (
+                  <button
+                    onClick={metric.onAction}
+                    className="w-full py-2 rounded-lg transition-all duration-200"
+                    style={{
+                      background: `${metric.color}15`,
+                      color: metric.color,
+                      fontSize: '0.875rem',
+                      border: `1px solid ${metric.color}40`
+                    }}
+                  >
+                    {metric.actionLabel ?? 'Ver detalles'}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        {inventoryMetrics.map((metric) => {
+          const Icon = metric.icon;
+          return (
+            <div
+              key={metric.key}
+              className="rounded-xl p-6 transition-all duration-300 border"
+              style={{
+                background: '#1C2541',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{ background: metric.bgGradient, position: 'absolute', inset: 0 }} />
+              <div className="relative z-10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center"
+                    style={{
+                      background: `${metric.color}20`,
+                      color: metric.color
+                    }}
+                  >
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <span
+                    className="px-2 py-1 rounded"
+                    style={{
+                      background: `${metric.color}20`,
+                      color: metric.color,
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    {metric.description}
+                  </span>
+                </div>
+
+                <div>
+                  <div style={{ color: '#A8A8A8', fontSize: '0.875rem' }}>{metric.title}</div>
+                  <div
+                    style={{ color: '#E0E0E0', fontSize: '1.75rem', fontWeight: 600, marginTop: '0.25rem' }}
+                  >
+                    {metric.value}
+                  </div>
+                </div>
+
+                {metric.onAction && (
+                  <button
+                    onClick={metric.onAction}
+                    className="w-full py-2 rounded-lg transition-all duration-200"
+                    style={{
+                      background: `${metric.color}15`,
+                      color: metric.color,
+                      fontSize: '0.875rem',
+                      border: `1px solid ${metric.color}40`
+                    }}
+                  >
+                    {metric.actionLabel ?? 'Ver detalles'}
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -587,7 +716,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}
                   >
                     <td className="py-4 px-4" style={{ color: '#E0E0E0', fontSize: '0.875rem' }}>
-                      {movement.product_detail?.name ?? 'Producto'}
+                      <div className="flex flex-col">
+                        <span>{movement.product_detail?.name ?? 'Producto'}</span>
+                        <span className="text-xs text-slate-400">
+                          {movement.product_detail?.code ?? '—'} ·{' '}
+                          {CATEGORY_LABELS[movement.product_detail?.category ?? ''] ?? 'Sin categoría'}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-4 px-4">
                       <span

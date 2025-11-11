@@ -5,10 +5,9 @@ interface TopbarProps {
   onOpenNotifications: () => void;
   onNavigate: (section: string, options?: any) => void;
   onLogout: () => void;
-  onChangePassword: () => void;
 }
 
-export function Topbar({ onOpenNotifications, onNavigate, onLogout, onChangePassword }: TopbarProps) {
+export function Topbar({ onOpenNotifications, onNavigate, onLogout }: TopbarProps) {
   return (
     <div 
       className="h-16 border-b flex items-center justify-between px-8"
@@ -49,10 +48,9 @@ export function Topbar({ onOpenNotifications, onNavigate, onLogout, onChangePass
         </button>
 
         {/* User Profile Menu */}
-        <UserMenu 
+        <UserMenu
           onNavigate={onNavigate}
           onLogout={onLogout}
-          onChangePassword={onChangePassword}
         />
       </div>
     </div>

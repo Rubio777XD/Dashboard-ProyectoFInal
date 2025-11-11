@@ -59,6 +59,15 @@ def calculate_totals(movements) -> dict[str, Decimal]:
 def get_dashboard_metrics() -> dict[str, Decimal | int]:
     totals = calculate_totals(Movement.objects.all())
     low_stock_count = Product.objects.filter(stock__lte=F('low_threshold')).count()
+    product_count = Product.objects.count()
+    product_totals = Product.objects.aggregate(
+        total_stock=Coalesce(Sum('stock'), Value(0), output_field=MONEY_FIELD),
+        inventory_value=Coalesce(
+            Sum(ExpressionWrapper(F('stock') * F('avg_cost'), output_field=MONEY_FIELD)),
+            Value(0),
+            output_field=MONEY_FIELD,
+        ),
+    )
     rate = get_mxn_to_usd_rate()
 
     ingresos_usd = _quantize(totals['ingresos_mxn'] * rate)
@@ -68,6 +77,9 @@ def get_dashboard_metrics() -> dict[str, Decimal | int]:
     return {
         **totals,
         'low_stock_count': low_stock_count,
+        'product_count': product_count,
+        'total_stock_units': _quantize(product_totals['total_stock'] or Decimal('0'), '0.01'),
+        'inventory_value_mxn': _quantize(product_totals['inventory_value'] or Decimal('0')),
         'usd_rate': _quantize(rate, '0.0001'),
         'ingresos_usd': ingresos_usd,
         'egresos_usd': egresos_usd,

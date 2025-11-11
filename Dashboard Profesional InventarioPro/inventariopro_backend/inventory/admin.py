@@ -5,7 +5,17 @@ from .models import Movement, Product
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code', 'stock', 'low_threshold', 'avg_cost', 'suggested_price', 'created_at')
+    list_display = (
+        'name',
+        'code',
+        'category',
+        'stock',
+        'low_threshold',
+        'avg_cost',
+        'suggested_price',
+        'created_at',
+    )
+    list_filter = ('category',)
     search_fields = ('name', 'code')
 
 

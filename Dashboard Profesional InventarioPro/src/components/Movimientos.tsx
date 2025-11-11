@@ -15,12 +15,13 @@ interface Product {
   id: number;
   name: string;
   code: string;
+  category: string;
 }
 
 interface Movement {
   id: number;
   product: number;
-  product_detail: { name: string; code: string };
+  product_detail: { name: string; code: string; category?: string };
   movement_type: 'IN' | 'OUT';
   quantity: number;
   unit_price: number;
@@ -31,6 +32,14 @@ interface Movement {
 const typeMap: Record<'entrada' | 'salida', 'IN' | 'OUT'> = {
   entrada: 'IN',
   salida: 'OUT'
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  consoles: 'Consolas',
+  gaming_pcs: 'PCs gamer',
+  peripherals: 'Periféricos',
+  components: 'Componentes',
+  accessories: 'Merch & accesorios'
 };
 
 function formatCurrency(value: number) {
@@ -236,7 +245,12 @@ export function Movimientos({ filter }: MovimientosProps) {
                   >
                     {products.map((product) => (
                       <SelectItem key={product.id} value={String(product.id)}>
-                        {product.name} ({product.code})
+                        <div className="flex flex-col">
+                          <span>{product.name}</span>
+                          <span className="text-xs opacity-70">
+                            {product.code} • {CATEGORY_LABELS[product.category] ?? product.category}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -370,6 +384,10 @@ export function Movimientos({ filter }: MovimientosProps) {
                     <div>
                       <div style={{ color: '#E0E0E0', fontWeight: 600 }}>
                         {movement.product_detail?.name ?? 'Producto'}
+                      </div>
+                      <div style={{ color: '#7F8EA3', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                        {movement.product_detail?.code ?? '—'} ·{' '}
+                        {CATEGORY_LABELS[movement.product_detail?.category ?? ''] ?? 'Sin categoría'}
                       </div>
                       <div style={{ color: '#A8A8A8', fontSize: '0.75rem' }}>{formattedDate}</div>
                     </div>

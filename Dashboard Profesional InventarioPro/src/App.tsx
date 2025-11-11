@@ -8,14 +8,12 @@ import { Movimientos } from './components/Movimientos';
 import { Reportes } from './components/Reportes';
 import { Configuracion } from './components/Configuracion';
 import { NotificationDrawer } from './components/NotificationDrawer';
-import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { LoginScreen } from './components/LoginScreen';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
   const [navigationFilter, setNavigationFilter] = useState<any>(null);
 
   const handleSectionChange = (section: string) => {
@@ -62,7 +60,7 @@ export default function App() {
 
   return (
     <>
-      <div 
+      <div
         className="flex h-screen overflow-hidden"
         style={{ background: '#0B132B' }}
       >
@@ -75,11 +73,10 @@ export default function App() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Topbar */}
-          <Topbar 
+          <Topbar
             onOpenNotifications={() => setShowNotifications(true)}
             onNavigate={handleNavigate}
             onLogout={handleLogout}
-            onChangePassword={() => setShowChangePassword(true)}
           />
 
           {/* Content Area */}
@@ -89,16 +86,10 @@ export default function App() {
         </div>
 
         {/* Notifications Drawer */}
-        <NotificationDrawer 
+        <NotificationDrawer
           open={showNotifications}
           onClose={() => setShowNotifications(false)}
           onNavigate={handleNavigate}
-        />
-
-        {/* Change Password Modal */}
-        <ChangePasswordModal 
-          open={showChangePassword}
-          onClose={() => setShowChangePassword(false)}
         />
       </div>
 
