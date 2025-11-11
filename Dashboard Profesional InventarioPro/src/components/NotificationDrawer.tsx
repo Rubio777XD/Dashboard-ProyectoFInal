@@ -72,7 +72,14 @@ export function NotificationDrawer({ open, onClose, onNavigate }: NotificationDr
   const notifications = activeTab === 'alertas' ? alertas : sistema;
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
+    <Sheet
+      open={open}
+      onOpenChange={(value) => {
+        if (!value) {
+          onClose();
+        }
+      }}
+    >
       <SheetContent 
         side="right"
         className="w-[400px] sm:w-[500px]"

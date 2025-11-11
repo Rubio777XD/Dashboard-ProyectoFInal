@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from collections import defaultdict
 from decimal import Decimal
 
 from django.utils.dateparse import parse_date
@@ -51,6 +52,42 @@ class DashboardView(APIView):
     def get(self, request, *args, **kwargs):
         metrics = get_dashboard_metrics()
         return Response(normalize_payload(metrics))
+
+
+class InventorySummaryView(APIView):
+    def get(self, request, *args, **kwargs):
+        queryset = Product.objects.all().order_by('name')
+        serializer = ProductSerializer(queryset, many=True)
+
+        products_list = list(queryset)
+        total_stock = Decimal('0')
+        inventory_value = Decimal('0')
+        category_totals = defaultdict(
+            lambda: {
+                'category': '',
+                'products': 0,
+                'stock': Decimal('0'),
+                'inventory_value_mxn': Decimal('0'),
+            }
+        )
+
+        for product in products_list:
+            total_stock += product.stock
+            inventory_value += product.stock * product.avg_cost
+            entry = category_totals[product.category]
+            entry['category'] = product.category
+            entry['products'] += 1
+            entry['stock'] += product.stock
+            entry['inventory_value_mxn'] += product.stock * product.avg_cost
+
+        response = {
+            'total_products': len(products_list),
+            'total_stock_units': total_stock,
+            'inventory_value_mxn': inventory_value,
+            'categories': [category_totals[key] for key in sorted(category_totals.keys())],
+            'products': serializer.data,
+        }
+        return Response(normalize_payload(response))
 
 
 class ReportsView(APIView):

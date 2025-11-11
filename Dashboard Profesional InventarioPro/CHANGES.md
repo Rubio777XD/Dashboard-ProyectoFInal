@@ -1,5 +1,13 @@
 # Historial de cambios
 
+# 2025-02-14
+- Inventario gamer con categorías para consolas, PCs gamer, periféricos, componentes y accesorios.
+- Nuevo endpoint `/api/inventory/` con resumen por categoría y listado de productos.
+- Semilla de datos actualizada con 25 productos gaming, precios en MXN y movimientos balanceados.
+- Dashboard renovado con métricas de valor inventario, stock y conteo de productos reales desde la API.
+- Frontend conectado al backend (VITE_API_URL) y menú de usuario/notificaciones mejorado.
+- Prueba adicional que verifica la presencia del catálogo gamer en `/api/products/`.
+
 ## 2024-05-21
 - Integración completa con backend Django REST (`inventariopro_backend`).
 - Modelado de productos y movimientos con señales para stock y seeds de datos.

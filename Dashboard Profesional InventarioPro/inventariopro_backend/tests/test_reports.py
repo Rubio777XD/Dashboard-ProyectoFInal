@@ -22,6 +22,7 @@ class ReportCalculationsTests(TestCase):
         self.product = Product.objects.create(
             name='Producto Reporte',
             code='REP1',
+            category=Product.ProductCategory.GAMING_PCS,
             stock=Decimal('0'),
             low_threshold=Decimal('5'),
             avg_cost=Decimal('10'),
@@ -86,6 +87,7 @@ class ReportEndpointsTests(TestCase):
         self.product = Product.objects.create(
             name='Producto API',
             code='API1',
+            category=Product.ProductCategory.PERIPHERALS,
             stock=Decimal('0'),
             low_threshold=Decimal('5'),
             avg_cost=Decimal('10'),
@@ -117,6 +119,9 @@ class ReportEndpointsTests(TestCase):
             'egresos_mxn',
             'balance_mxn',
             'low_stock_count',
+            'product_count',
+            'total_stock_units',
+            'inventory_value_mxn',
             'usd_rate',
             'ingresos_usd',
             'egresos_usd',

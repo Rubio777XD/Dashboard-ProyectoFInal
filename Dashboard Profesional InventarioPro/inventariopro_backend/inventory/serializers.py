@@ -14,6 +14,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'code',
+            'category',
             'stock',
             'low_threshold',
             'avg_cost',

@@ -15,6 +15,7 @@ class MovementTests(APITestCase):
         self.product = Product.objects.create(
             name='Producto Test',
             code='TEST1',
+            category=Product.ProductCategory.COMPONENTS,
             stock=Decimal('0'),
             low_threshold=Decimal('5'),
             avg_cost=Decimal('10.00'),

@@ -7,8 +7,20 @@ from django.db.models import F
 
 
 class Product(models.Model):
+    class ProductCategory(models.TextChoices):
+        CONSOLES = 'consoles', 'Consolas'
+        GAMING_PCS = 'gaming_pcs', 'PCs gamer'
+        PERIPHERALS = 'peripherals', 'Periféricos'
+        COMPONENTS = 'components', 'Componentes'
+        ACCESSORIES = 'accessories', 'Merch y accesorios'
+
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=50, unique=True)
+    category = models.CharField(
+        max_length=30,
+        choices=ProductCategory.choices,
+        default=ProductCategory.CONSOLES,
+    )
     stock = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     low_threshold = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     avg_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)

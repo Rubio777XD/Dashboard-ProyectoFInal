@@ -1,4 +1,4 @@
-import { User, Settings, Lock, LogOut } from 'lucide-react';
+import { User, Settings, LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { ChevronDown } from 'lucide-react';
@@ -6,10 +6,9 @@ import { ChevronDown } from 'lucide-react';
 interface UserMenuProps {
   onNavigate: (section: string, options?: any) => void;
   onLogout: () => void;
-  onChangePassword: () => void;
 }
 
-export function UserMenu({ onNavigate, onLogout, onChangePassword }: UserMenuProps) {
+export function UserMenu({ onNavigate, onLogout }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -66,8 +65,8 @@ export function UserMenu({ onNavigate, onLogout, onChangePassword }: UserMenuPro
           Perfil
         </DropdownMenuItem>
         
-        <DropdownMenuItem 
-          onClick={() => onNavigate('configuracion', { section: 'notificaciones' })}
+        <DropdownMenuItem
+          onClick={() => onNavigate('configuracion')}
           className="cursor-pointer"
           style={{
             color: '#E0E0E0',
@@ -81,27 +80,9 @@ export function UserMenu({ onNavigate, onLogout, onChangePassword }: UserMenuPro
           }}
         >
           <Settings className="w-4 h-4 mr-2" style={{ color: '#4CC9F0' }} />
-          Preferencias
+          Configuración
         </DropdownMenuItem>
-        
-        <DropdownMenuItem 
-          onClick={onChangePassword}
-          className="cursor-pointer"
-          style={{
-            color: '#E0E0E0',
-            padding: '0.75rem 1rem'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(58, 134, 255, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-          }}
-        >
-          <Lock className="w-4 h-4 mr-2" style={{ color: '#FBBF24' }} />
-          Cambiar contraseña
-        </DropdownMenuItem>
-        
+
         <DropdownMenuSeparator style={{ background: 'rgba(255, 255, 255, 0.1)' }} />
         
         <DropdownMenuItem 

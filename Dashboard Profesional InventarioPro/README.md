@@ -1,150 +1,123 @@
-# InventarioPro Dashboard & API
+# Inventario Gamer Dashboard & API
 
-Este repositorio contiene el frontend en React + Vite + Tailwind generado desde Figma y un backend Django REST que provee la API y los datos requeridos por la aplicación.
+Aplicación full-stack para administrar inventario gamer con métricas en tiempo real.
+El backend está construido con Django REST Framework y el frontend con React + Vite +
+Tailwind/Shadcn UI. Se incluyen datos de ejemplo con consolas, PC gamer, periféricos,
+componentes y accesorios themed para gaming.
+
+## Tecnologías principales
+
+- **Backend:** Django 4, Django REST Framework, pytest
+- **Frontend:** React 18, Vite, TypeScript, TailwindCSS, Shadcn UI, Recharts
+- **Herramientas:** Sonner notifications, Lucide icons
 
 ## Requisitos
 
-- Node.js 18+
 - Python 3.11+
-- pip / virtualenv
+- Node.js 18+
+- npm o pnpm
+- pip y (opcional) virtualenv
 
-## Instalación
+## Instalación rápida
 
-1. Clona el repositorio y entra en la carpeta del proyecto.
-2. (Opcional) crea y activa un entorno virtual de Python.
-3. Instala las dependencias de Python:
+```bash
+git clone <repo>
+cd "Dashboard Profesional InventarioPro"
+```
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Instala las dependencias del frontend:
-
-   ```bash
-   npm install
-   ```
-
-## Variables de entorno
-
-| Variable | Descripción | Valor por defecto |
-| --- | --- | --- |
-| `DJANGO_SECRET_KEY` | Clave secreta para Django | `dev-secret-key` |
-| `DJANGO_DEBUG` | Activa modo debug (`true`/`false`) | `true` |
-| `DJANGO_ALLOWED_HOSTS` | Hosts permitidos separados por coma | `localhost,127.0.0.1` |
-| `CORS_ALLOWED_ORIGINS` | Orígenes autorizados para CORS | `http://localhost:5173` |
-| `CURRENCY_CACHE_TIMEOUT` | Caché para la tasa de cambio en segundos | `3600` |
-| `VITE_API_URL` | URL base del backend que consumirá el frontend | `http://localhost:8000` |
-
-Crea un archivo `.env` en el frontend con el valor adecuado para `VITE_API_URL` durante el desarrollo.
-
-## Ejecución en desarrollo
-
-### Backend (Django)
+### 1. Backend (Django)
 
 ```bash
 cd inventariopro_backend
+python -m venv .venv
+source .venv/bin/activate  # En Windows: .venv\Scripts\activate
+pip install -r ../requirements.txt
 python manage.py migrate
 python manage.py seed_inventory --movements 200
 python manage.py runserver 0.0.0.0:8000
 ```
 
-### Frontend (React)
+### 2. Frontend (React / Vite)
 
 En otra terminal:
+
+```bash
+cd "Dashboard Profesional InventarioPro"
+npm install
+```
+
+Configura la variable `VITE_API_URL` en `.env.local`:
+
+```bash
+VITE_API_URL=http://localhost:8000
+```
+
+Si no existe el archivo, crea uno llamado `.env.local` en la carpeta `src` con la variable anterior.
+
+Inicia el servidor de desarrollo:
 
 ```bash
 npm run dev -- --host
 ```
 
-La aplicación estará disponible en `http://localhost:5173` consumiendo la API en `http://localhost:8000`.
+El panel quedará disponible en [http://localhost:5173](http://localhost:5173).
 
-## Despliegue / Build de producción
+## Datos de ejemplo
 
-1. Genera el build del frontend:
+El comando `python manage.py seed_inventory` genera un catálogo gamer completo:
 
-   ```bash
-   npm run build
-   ```
+- 5 **Consolas** (PS5, Xbox Series X, Nintendo Switch OLED, etc.)
+- 5 **PCs gamer** (torres y portátiles)
+- 5 **Componentes** (GPUs, CPUs, RAM, SSD)
+- 5 **Periféricos** (mouse, teclados, headsets, monitores)
+- 5 **Accesorios** y merch gamer
 
-2. Copia el contenido de `dist/` a `inventariopro_backend/frontend/` (crea la carpeta si no existe). El archivo `inventariopro_backend/frontend/index.html` será servido por Django.
-3. Ejecuta `python manage.py collectstatic` (opcional) para preparar assets estáticos adicionales.
-4. Inicia el servidor Django (por ejemplo con Gunicorn) apuntando a `inventariopro_backend.wsgi`.
+Los precios están en pesos mexicanos y los stocks se mantienen en un rango realista
+(5 – 30 unidades) con movimientos de entrada/salida generados automáticamente para
+probar las métricas del dashboard y los reportes.
 
-## API principal
+## API REST
 
-- `GET /api/products/` — Lista de productos.
-- `POST /api/products/` — Crear producto.
-- `GET /api/products/{id}/`, `PATCH /api/products/{id}/`, `DELETE /api/products/{id}/` — Operaciones sobre un producto.
-- `GET /api/movements/` — Lista de movimientos.
-- `POST /api/movements/` — Crear movimiento de entrada/salida.
-- `GET /api/dashboard/` — Resumen general (ingresos, egresos, balance, bajo stock, conversión USD).
-- `GET /api/reports?from=YYYY-MM-DD&to=YYYY-MM-DD` — Totales y series para gráficos en el rango indicado.
-
-## Seed de datos
-
-Genera datos de ejemplo ejecutando:
-
-```bash
-cd inventariopro_backend
-python manage.py seed_inventory --movements 500
-```
-
-Esto crea 10 productos y movimientos aleatorios para pruebas.
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/api/products/` | Lista y crea productos gamer. |
+| GET | `/api/products/{id}/` | Obtiene, edita o elimina un producto. |
+| GET | `/api/inventory/` | Resumen de inventario por categoría + listado de productos. |
+| GET | `/api/movements/` | Movimientos de inventario (entradas/salidas). |
+| POST | `/api/movements/` | Registra un movimiento. |
+| GET | `/api/dashboard/` | Totales de ventas, compras, balance, stock y valor inventario. |
+| GET | `/api/reports/?from=YYYY-MM-DD&to=YYYY-MM-DD` | Series para gráficas y totales por rango. |
 
 ## Pruebas
 
-Ejecuta las pruebas (pytest + Django) desde `inventariopro_backend`:
-
 ```bash
+cd inventariopro_backend
 pytest
 ```
 
-Hay más de 10 pruebas cubriendo cálculos de stock, totales, endpoints y el cliente de la API externa.
+Las pruebas cubren movimientos, reportes, conversión de moneda y que el catálogo gamer
+esté disponible en `/api/products/` y `/api/inventory/`.
 
-## Perfilado
-
-El script `inventariopro_backend/perf.py` genera datos, mide tiempos con `timeit` y corre `cProfile` sobre la vista de dashboard. Para ejecutarlo:
-
-```bash
-cd inventariopro_backend
-python perf.py --movements 2000 --iterations 50
-```
-
-Los resultados se guardan en `inventariopro_backend/reports/perf_results.md`.
-
-## Integración frontend-backend
-
-- El frontend consume la API configurada en `VITE_API_URL`.
-- Dashboard, Productos, Movimientos y Reportes utilizan datos reales devueltos por Django.
-- En producción Django puede servir el build estático copiando los archivos a `inventariopro_backend/frontend/`.
-
-## Comandos útiles
-
-```bash
-# Migraciones
-python manage.py makemigrations
-python manage.py migrate
-
-# Superusuario
-python manage.py createsuperuser
-
-# Ejecutar servidor de desarrollo
-python manage.py runserver 0.0.0.0:8000
-```
-
-## Estructura
+## Estructura del proyecto
 
 ```
 inventariopro_backend/
-  manage.py
-  inventariopro_backend/
-  inventory/
-  services/
-  tests/
-  reports/
+  inventory/        # Modelos, vistas y serializers de inventario
+  services/         # Servicios de dashboard y reportes
+  tests/            # Suite de pytest
 src/
-  components/
-  lib/
+  components/       # Componentes React del dashboard
+  lib/              # utilidades de API y helpers
 ```
 
-Consulta `CHANGES.md` para un historial de modificaciones relevantes.
+## Métricas destacadas del dashboard
+
+- Ventas, compras y balance en MXN/USD
+- Número total de productos gamer
+- Stock disponible y valor estimado del inventario
+- Productos en bajo stock por categoría
+- Movimientos recientes con detalle de categoría
+
+## Historial de cambios
+
+Consulta `CHANGES.md` para el registro cronológico de mejoras.

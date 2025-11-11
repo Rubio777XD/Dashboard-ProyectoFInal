@@ -1,11 +1,10 @@
-import { 
-  LayoutDashboard, 
-  Package, 
-  ArrowLeftRight, 
-  FileText, 
-  Settings, 
-  HelpCircle, 
-  LogOut 
+import {
+  LayoutDashboard,
+  Package,
+  ArrowLeftRight,
+  FileText,
+  Settings,
+  LogOut
 } from 'lucide-react';
 
 interface AppSidebarProps {
