@@ -7,6 +7,7 @@ import { Productos } from './components/Productos';
 import { Movimientos } from './components/Movimientos';
 import { Reportes } from './components/Reportes';
 import { Configuracion } from './components/Configuracion';
+import { Servicios } from './components/Servicios';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { LoginScreen } from './components/LoginScreen';
 
@@ -47,6 +48,8 @@ export default function App() {
         return <Movimientos filter={navigationFilter} />;
       case 'reportes':
         return <Reportes filter={navigationFilter} />;
+      case 'servicios':
+        return <Servicios />;
       case 'configuracion':
         return <Configuracion section={navigationFilter?.section} />;
       default:

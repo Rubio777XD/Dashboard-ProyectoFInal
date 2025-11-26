@@ -80,13 +80,14 @@ probar las métricas del dashboard y los reportes.
 
 | Método | Endpoint | Descripción |
 | --- | --- | --- |
-| GET | `/api/products/` | Lista y crea productos gamer. |
-| GET | `/api/products/{id}/` | Obtiene, edita o elimina un producto. |
+| GET/POST | `/api/products/` | Lista y crea productos gamer. Filtros: `name`, `category`, `low_stock`. |
+| GET/PATCH/DELETE | `/api/products/{id}/` | Obtiene, edita o elimina un producto. |
 | GET | `/api/inventory/` | Resumen de inventario por categoría + listado de productos. |
-| GET | `/api/movements/` | Movimientos de inventario (entradas/salidas). |
-| POST | `/api/movements/` | Registra un movimiento. |
+| GET/POST | `/api/movements/` | Movimientos de inventario (entradas/salidas). Filtros: `product`, `start`, `end`, `limit`. |
 | GET | `/api/dashboard/` | Totales de ventas, compras, balance, stock y valor inventario. |
 | GET | `/api/reports/?from=YYYY-MM-DD&to=YYYY-MM-DD` | Series para gráficas y totales por rango. |
+| GET/POST | `/api/services/` | CRUD de servicios con filtros `name`, `status`, `category`, `min_price`, `max_price`. |
+| GET/PATCH/DELETE | `/api/services/{id}/` | Detalle, edición y eliminación de servicios. |
 
 ## Pruebas
 
@@ -95,8 +96,18 @@ cd inventariopro_backend
 pytest
 ```
 
-Las pruebas cubren movimientos, reportes, conversión de moneda y que el catálogo gamer
-esté disponible en `/api/products/` y `/api/inventory/`.
+Hay más de 10 pruebas. Dos de ellas fallan a propósito (`test_negative_quantity_should_be_rejected`
+y `test_services_require_unique_names_across_status`) para visibilizar validaciones pendientes.
+
+## Perfilado de rendimiento
+
+Ejemplo rápido comparando cálculo lento vs. optimizado:
+
+```bash
+python profiling/performance_inventory.py
+```
+
+Se imprime el tiempo de cada versión sobre los movimientos existentes en la base de datos.
 
 ## Estructura del proyecto
 

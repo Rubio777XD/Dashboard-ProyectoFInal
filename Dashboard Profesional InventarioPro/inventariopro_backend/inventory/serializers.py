@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import Movement, Product
+from .models import Movement, Product, Service
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -45,3 +45,19 @@ class MovementSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['created_at', 'product_detail']
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = [
+            'id',
+            'name',
+            'code',
+            'category',
+            'description',
+            'price',
+            'status',
+            'created_at',
+        ]
+        read_only_fields = ['created_at']

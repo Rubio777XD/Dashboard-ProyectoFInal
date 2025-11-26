@@ -81,3 +81,37 @@ class Movement(models.Model):
         delta = self.get_stock_delta()
         Product.objects.filter(pk=self.product_id).update(stock=F('stock') - delta)
         super().delete(*args, **kwargs)
+
+
+class Service(models.Model):
+    class ServiceStatus(models.TextChoices):
+        ACTIVE = 'active', 'Activo'
+        INACTIVE = 'inactive', 'Inactivo'
+
+    class ServiceCategory(models.TextChoices):
+        MAINTENANCE = 'maintenance', 'Mantenimiento'
+        INSTALLATION = 'installation', 'Instalación'
+        WARRANTY = 'warranty', 'Garantía extendida'
+        OTHER = 'other', 'Otro'
+
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=50, unique=True)
+    category = models.CharField(
+        max_length=30,
+        choices=ServiceCategory.choices,
+        default=ServiceCategory.MAINTENANCE,
+    )
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    status = models.CharField(
+        max_length=15,
+        choices=ServiceStatus.choices,
+        default=ServiceStatus.ACTIVE,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self) -> str:  # pragma: no cover - representación simple
+        return f"{self.name} ({self.code})"
