@@ -6,7 +6,9 @@ del cálculo de totales de inventario. Se ejecuta con:
 
 Requiere que exista la base de datos de Django (usa settings locales). El
 objetivo es mostrar cómo el acceso fila por fila es mucho más lento que las
-agregaciones en base de datos.
+agregaciones en base de datos. El resultado esperado muestra dos líneas con
+los tiempos del modo lento (loops en Python) y del modo rápido (query única
+con agregaciones), para que sea fácil ver la diferencia didáctica.
 """
 
 from __future__ import annotations

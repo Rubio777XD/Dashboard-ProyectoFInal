@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Edit, Trash2, Search, CheckCircle, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
@@ -34,6 +34,10 @@ export function Servicios() {
   const [services, setServices] = useState<Service[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [pageSize, setPageSize] = useState<number | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
   const [formState, setFormState] = useState({
@@ -46,14 +50,25 @@ export function Servicios() {
   });
 
   useEffect(() => {
-    loadServices();
+    const savedPageSize = localStorage.getItem('dashboard.pageSize');
+    if (savedPageSize && !Number.isNaN(Number(savedPageSize))) {
+      setPageSize(Number(savedPageSize));
+    }
   }, []);
+
+  useEffect(() => {
+    loadServices();
+  }, [search, statusFilter, categoryFilter, minPrice, maxPrice, pageSize]);
 
   async function loadServices() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('name', search);
       if (statusFilter) params.set('status', statusFilter);
+      if (categoryFilter) params.set('category', categoryFilter);
+      if (minPrice) params.set('min_price', minPrice);
+      if (maxPrice) params.set('max_price', maxPrice);
+      if (pageSize) params.set('page_size', String(pageSize));
       const endpoint = `/api/services/${params.toString() ? `?${params.toString()}` : ''}`;
       const data = await apiFetch<Service[]>(endpoint);
       setServices(data.map((item) => ({ ...item, price: Number(item.price) })));
@@ -124,15 +139,6 @@ export function Servicios() {
     }
   }
 
-  const filteredServices = useMemo(() => {
-    const term = search.toLowerCase();
-    return services.filter((service) => {
-      if (statusFilter && service.status !== statusFilter) return false;
-      if (!term) return true;
-      return service.name.toLowerCase().includes(term) || service.code.toLowerCase().includes(term);
-    });
-  }, [services, search, statusFilter]);
-
   return (
     <div className="p-8 space-y-6" style={{ background: '#0B132B', minHeight: 'calc(100vh - 4rem)' }}>
       <div className="flex items-center justify-between">
@@ -159,10 +165,21 @@ export function Servicios() {
             placeholder="Buscar por nombre o código"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onBlur={loadServices}
             style={{ background: 'rgba(255,255,255,0.05)', color: '#E0E0E0', paddingLeft: '2.5rem' }}
           />
         </div>
+
+        <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value)}>
+          <SelectTrigger className="w-48" style={{ background: 'rgba(255,255,255,0.05)', color: '#E0E0E0' }}>
+            <SelectValue placeholder="Categoría" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Todas</SelectItem>
+            {CATEGORY_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); }}>
           <SelectTrigger className="w-48" style={{ background: 'rgba(255,255,255,0.05)', color: '#E0E0E0' }}>
@@ -175,6 +192,25 @@ export function Servicios() {
             ))}
           </SelectContent>
         </Select>
+
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            placeholder="Precio mín."
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            className="w-32"
+            style={{ background: 'rgba(255,255,255,0.05)', color: '#E0E0E0' }}
+          />
+          <Input
+            type="number"
+            placeholder="Precio máx."
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+            className="w-32"
+            style={{ background: 'rgba(255,255,255,0.05)', color: '#E0E0E0' }}
+          />
+        </div>
 
         <Button variant="outline" onClick={loadServices}>Aplicar filtros</Button>
       </div>
@@ -191,7 +227,7 @@ export function Servicios() {
             </tr>
           </thead>
           <tbody>
-            {filteredServices.map((service) => (
+            {services.map((service) => (
               <tr key={service.id} className="border-t border-white/10">
                 <td className="px-4 py-3">
                   <div className="font-medium">{service.name}</div>
@@ -216,7 +252,7 @@ export function Servicios() {
                 </td>
               </tr>
             ))}
-            {filteredServices.length === 0 && (
+            {services.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-white/60">
                   No hay servicios con los filtros actuales.

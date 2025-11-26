@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
@@ -20,8 +20,21 @@ export function Configuracion({ section }: ConfiguracionProps) {
   const [pageSize, setPageSize] = useState('20');
   const [notifications, setNotifications] = useState(true);
 
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('dashboard.language');
+    const savedPageSize = localStorage.getItem('dashboard.pageSize');
+    const savedNotifications = localStorage.getItem('dashboard.notifications');
+
+    if (savedLanguage) setLanguage(savedLanguage);
+    if (savedPageSize) setPageSize(savedPageSize);
+    if (savedNotifications) setNotifications(savedNotifications === 'true');
+  }, []);
+
   function handleSave() {
-    toast.success('Preferencias guardadas (demo)');
+    localStorage.setItem('dashboard.language', language);
+    localStorage.setItem('dashboard.pageSize', pageSize);
+    localStorage.setItem('dashboard.notifications', String(notifications));
+    toast.success('Preferencias guardadas. El tamaño de página se aplicará en listados.');
   }
 
   return (

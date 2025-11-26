@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from .models import Movement, Product, Service
 
@@ -46,8 +47,36 @@ class MovementSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created_at', 'product_detail']
 
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('La cantidad debe ser mayor a cero.')
+        return value
+
+    def validate(self, attrs):
+        product = attrs.get('product') or getattr(self.instance, 'product', None)
+        movement_type = attrs.get('movement_type') or getattr(self.instance, 'movement_type', None)
+        quantity = attrs.get('quantity') or getattr(self.instance, 'quantity', None)
+
+        if product and movement_type == Movement.MovementType.OUT and quantity is not None:
+            current_stock = product.stock
+            if self.instance and self.instance.product_id == product.id:
+                current_stock -= self.instance.get_stock_delta()
+            projected = current_stock - quantity
+            if projected < 0:
+                raise serializers.ValidationError({'quantity': 'La salida dejaría el inventario en negativo.'})
+        return attrs
+
 
 class ServiceSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(
+        validators=[
+            UniqueValidator(
+                queryset=Service.objects.all(),
+                message='Ya existe un servicio con este nombre. Usa otro para mantener el catálogo coherente.',
+            )
+        ]
+    )
+
     class Meta:
         model = Service
         fields = [

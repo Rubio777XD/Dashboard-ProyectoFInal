@@ -1,5 +1,13 @@
 # Historial de cambios
 
+# 2025-11-27
+- Validaciones de inventario endurecidas (cantidades > 0 y sin stock negativo).
+- Unicidad lógica del nombre de servicios y mensaje claro en API.
+- Suite pytest en verde con xfail documentados y prueba nueva de filtros de servicios.
+- Filtros de servicios (nombre, categoría, rango de precio) conectados en backend y frontend.
+- Configuración básica persistida en localStorage y aplicada al tamaño de página.
+- Script de perfilado documenta diferencias entre versión lenta y optimizada.
+
 # 2025-11-26
 - CRUD de servicios con filtros y UI dedicada en el frontend.
 - Configuración simplificada a idioma, paginación y alertas básicas.

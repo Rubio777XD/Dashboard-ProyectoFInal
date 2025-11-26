@@ -86,7 +86,7 @@ probar las métricas del dashboard y los reportes.
 | GET/POST | `/api/movements/` | Movimientos de inventario (entradas/salidas). Filtros: `product`, `start`, `end`, `limit`. |
 | GET | `/api/dashboard/` | Totales de ventas, compras, balance, stock y valor inventario. |
 | GET | `/api/reports/?from=YYYY-MM-DD&to=YYYY-MM-DD` | Series para gráficas y totales por rango. |
-| GET/POST | `/api/services/` | CRUD de servicios con filtros `name`, `status`, `category`, `min_price`, `max_price`. |
+| GET/POST | `/api/services/` | CRUD de servicios con filtros `name`, `status`, `category`, `min_price`, `max_price` y `page_size`. |
 | GET/PATCH/DELETE | `/api/services/{id}/` | Detalle, edición y eliminación de servicios. |
 
 ## Pruebas
@@ -96,8 +96,10 @@ cd inventariopro_backend
 pytest
 ```
 
-Hay más de 10 pruebas. Dos de ellas fallan a propósito (`test_negative_quantity_should_be_rejected`
-y `test_services_require_unique_names_across_status`) para visibilizar validaciones pendientes.
+La suite incluye más de 20 pruebas. Algunas están marcadas como `xfail` con
+razones explícitas para documentar funcionalidades futuras (p. ej., exportar
+servicios a CSV o ajustes masivos de precios). El resto pasa en verde e incluye
+validaciones de stock y unicidad de servicios.
 
 ## Perfilado de rendimiento
 
@@ -108,6 +110,12 @@ python profiling/performance_inventory.py
 ```
 
 Se imprime el tiempo de cada versión sobre los movimientos existentes en la base de datos.
+
+## Configuración básica
+
+La sección "Configuración" del frontend guarda preferencias en `localStorage`
+(idioma, alertas y tamaño de página). El tamaño de página se usa en listados
+como Servicios para limitar resultados a la cantidad elegida.
 
 ## Estructura del proyecto
 

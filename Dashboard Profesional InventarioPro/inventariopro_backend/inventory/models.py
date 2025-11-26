@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from django.db.models import F
 
 
@@ -61,7 +62,36 @@ class Movement(models.Model):
         multiplier = Decimal('1') if self.movement_type == self.MovementType.IN else Decimal('-1')
         return multiplier * self.quantity
 
+    def clean(self):
+        errors = {}
+        if self.quantity is not None and self.quantity <= 0:
+            errors['quantity'] = 'La cantidad debe ser mayor a cero.'
+
+        # Validar que el stock nunca quede negativo al aplicar el movimiento.
+        if self.product_id:
+            old_delta = Decimal('0')
+            old_product_id = None
+            if self.pk:
+                previous = Movement.objects.get(pk=self.pk)
+                old_delta = previous.get_stock_delta()
+                old_product_id = previous.product_id
+
+            new_delta = self.get_stock_delta()
+            product = Product.objects.get(pk=self.product_id)
+            projected_stock = product.stock - old_delta + new_delta
+            if projected_stock < 0:
+                errors['quantity'] = 'La operación dejaría el inventario en negativo.'
+
+            if old_product_id and old_product_id != self.product_id:
+                previous_product = Product.objects.get(pk=old_product_id)
+                if previous_product.stock - old_delta < 0:
+                    errors['product'] = 'El cambio de producto no puede invalidar stock previo.'
+
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
+        self.full_clean()
         is_update = self.pk is not None
         old_product_id = None
         old_delta = Decimal('0')
@@ -69,13 +99,16 @@ class Movement(models.Model):
             old = Movement.objects.get(pk=self.pk)
             old_product_id = old.product_id
             old_delta = old.get_stock_delta()
-        super().save(*args, **kwargs)
-        new_delta = self.get_stock_delta()
-        if is_update and old_product_id and old_product_id != self.product_id:
-            Product.objects.filter(pk=old_product_id).update(stock=F('stock') - old_delta)
-            Product.objects.filter(pk=self.product_id).update(stock=F('stock') + new_delta)
-        else:
-            Product.objects.filter(pk=self.product_id).update(stock=F('stock') - old_delta + new_delta)
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            new_delta = self.get_stock_delta()
+            if is_update and old_product_id and old_product_id != self.product_id:
+                Product.objects.select_for_update().filter(pk=old_product_id).update(stock=F('stock') - old_delta)
+                Product.objects.select_for_update().filter(pk=self.product_id).update(stock=F('stock') + new_delta)
+            else:
+                Product.objects.select_for_update().filter(pk=self.product_id).update(
+                    stock=F('stock') - old_delta + new_delta
+                )
 
     def delete(self, *args, **kwargs):
         delta = self.get_stock_delta()
@@ -94,7 +127,7 @@ class Service(models.Model):
         WARRANTY = 'warranty', 'Garantía extendida'
         OTHER = 'other', 'Otro'
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     code = models.CharField(max_length=50, unique=True)
     category = models.CharField(
         max_length=30,
