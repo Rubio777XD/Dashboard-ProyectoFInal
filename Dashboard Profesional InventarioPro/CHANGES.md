@@ -1,5 +1,12 @@
 # Historial de cambios
 
+# 2025-11-26
+- CRUD de servicios con filtros y UI dedicada en el frontend.
+- Configuración simplificada a idioma, paginación y alertas básicas.
+- Ejemplo de perfilado `profiling/performance_inventory.py` con versión lenta vs optimizada.
+- Suite de pruebas pytest ampliada (incluye casos que fallan intencionalmente para TODOs).
+- Filtros en endpoints de productos, movimientos y servicios.
+
 # 2025-02-14
 - Inventario gamer con categorías para consolas, PCs gamer, periféricos, componentes y accesorios.
 - Nuevo endpoint `/api/inventory/` con resumen por categoría y listado de productos.
