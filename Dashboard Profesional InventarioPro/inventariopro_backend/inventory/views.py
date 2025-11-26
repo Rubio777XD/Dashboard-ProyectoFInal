@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from decimal import Decimal
 
+from django.db.models import F
 from django.utils.dateparse import parse_date
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
@@ -79,6 +80,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
         status = self.request.query_params.get('status')
         min_price = self.request.query_params.get('min_price')
         max_price = self.request.query_params.get('max_price')
+        limit = self.request.query_params.get('limit') or self.request.query_params.get('page_size')
 
         if name:
             queryset = queryset.filter(name__icontains=name)
@@ -90,6 +92,11 @@ class ServiceViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(price__gte=min_price)
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
+        if limit:
+            try:
+                return queryset[: int(limit)]
+            except (TypeError, ValueError):
+                return queryset
         return queryset
 
 

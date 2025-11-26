@@ -92,3 +92,48 @@ def test_service_search_by_name(api_client, base_service):
     payload = response.json()
     assert any('Cableado' in item['name'] for item in payload)
     assert all('Cableado' in item['name'] or 'cable' in item['name'].lower() for item in payload)
+
+
+@pytest.mark.django_db
+def test_service_filter_combination_returns_expected(api_client):
+    """El endpoint debe combinar filtros de nombre, categoría y rango de precio."""
+
+    service_a = Service.objects.create(
+        name='Soporte básico',
+        code='SRV-010',
+        category=Service.ServiceCategory.MAINTENANCE,
+        description='Soporte remoto',
+        price=Decimal('299.00'),
+        status=Service.ServiceStatus.ACTIVE,
+    )
+    Service.objects.create(
+        name='Soporte premium',
+        code='SRV-011',
+        category=Service.ServiceCategory.MAINTENANCE,
+        description='Soporte on-site',
+        price=Decimal('1299.00'),
+        status=Service.ServiceStatus.ACTIVE,
+    )
+    Service.objects.create(
+        name='Instalación express',
+        code='SRV-012',
+        category=Service.ServiceCategory.INSTALLATION,
+        description='Visita rápida',
+        price=Decimal('499.00'),
+        status=Service.ServiceStatus.INACTIVE,
+    )
+
+    list_url = reverse('service-list')
+    response = api_client.get(
+        list_url,
+        {
+            'name': 'soporte',
+            'category': Service.ServiceCategory.MAINTENANCE,
+            'min_price': '200',
+            'max_price': '400',
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 1
+    assert payload[0]['id'] == service_a.id

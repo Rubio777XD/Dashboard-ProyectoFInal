@@ -1,20 +1,23 @@
 """
-Pruebas que fallan a propósito para documentar requisitos pendientes.
-Se dejan sin xfail para que pytest refleje los pendientes en el reporte.
+Casos de validación y expectativas documentadas.
+
+Incluye validaciones críticas que deben pasar y un par de xfail bien
+documentados para futuros alcances (sin romper la suite completa).
 """
 
 from __future__ import annotations
 
-import pytest
 from decimal import Decimal
+
+import pytest
 from rest_framework.test import APIClient
 
-from inventory.models import Movement, Product
+from inventory.models import Movement, Product, Service
 
 
 @pytest.mark.django_db
 def test_negative_quantity_should_be_rejected():
-    """TODO: validar que las salidas no permitan cantidades negativas."""
+    """Las salidas con cantidad negativa deben ser rechazadas con 400."""
 
     client = APIClient()
     product = Product.objects.create(
@@ -35,15 +38,14 @@ def test_negative_quantity_should_be_rejected():
         'date': '2024-01-01',
     }
     response = client.post('/api/movements/', payload, format='json')
-    # Debería ser 400 cuando se agregue la validación de negocio
     assert response.status_code == 400
+    product.refresh_from_db()
+    assert product.stock == Decimal('10')  # El stock no cambia en casos inválidos.
 
 
 @pytest.mark.django_db
 def test_services_require_unique_names_across_status():
-    """TODO: consolidar catálogo evitando nombres duplicados aun con distinto estado."""
-
-    from inventory.models import Service
+    """No se permiten nombres duplicados aunque el estado sea distinto."""
 
     Service.objects.create(
         name='Revisión general',
@@ -64,4 +66,18 @@ def test_services_require_unique_names_across_status():
     )
 
     with pytest.raises(Exception):
-        duplicate.full_clean()  # Esperado: falla cuando se implemente unicidad por nombre
+        duplicate.full_clean()  # La unicidad por nombre debe bloquear duplicados.
+
+
+@pytest.mark.xfail(reason='Exportar servicios a CSV no está implementado todavía')
+def test_export_services_placeholder():
+    """Recordatorio documentado de la exportación de catálogo."""
+
+    raise NotImplementedError('Exportar servicios a CSV no está disponible')
+
+
+@pytest.mark.xfail(reason='Ajuste automático de precios por inflación pendiente')
+def test_mass_price_adjustment_placeholder():
+    """Ejemplo de xfail para feature futura de ajuste masivo de precios."""
+
+    raise NotImplementedError('Falta lógica de ajuste masivo de precios')
