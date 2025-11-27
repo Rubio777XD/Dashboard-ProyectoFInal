@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DollarSign, TrendingDown, Scale, AlertTriangle, Package, Boxes, Wallet } from 'lucide-react';
+import { DollarSign, TrendingDown, Scale, AlertTriangle, Package, Boxes, Wallet, Filter } from 'lucide-react';
 import {
   AreaChart,
   Area,

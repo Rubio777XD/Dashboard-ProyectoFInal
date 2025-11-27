@@ -33,8 +33,8 @@ const STATUS_OPTIONS = [
 export function Servicios() {
   const [services, setServices] = useState<Service[]>([]);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [pageSize, setPageSize] = useState<number | undefined>(undefined);
@@ -64,8 +64,8 @@ export function Servicios() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('name', search);
-      if (statusFilter) params.set('status', statusFilter);
-      if (categoryFilter) params.set('category', categoryFilter);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (categoryFilter !== 'all') params.set('category', categoryFilter);
       if (minPrice) params.set('min_price', minPrice);
       if (maxPrice) params.set('max_price', maxPrice);
       if (pageSize) params.set('page_size', String(pageSize));
@@ -174,7 +174,7 @@ export function Servicios() {
             <SelectValue placeholder="Categoría" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas</SelectItem>
+            <SelectItem value="all">Todas</SelectItem>
             {CATEGORY_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
             ))}
@@ -186,7 +186,7 @@ export function Servicios() {
             <SelectValue placeholder="Filtrar por estado" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
             {STATUS_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
             ))}
