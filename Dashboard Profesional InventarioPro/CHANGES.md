@@ -1,5 +1,9 @@
 # Historial de cambios
 
+# 2025-12-04
+- Reportes ahora respetan exactamente el rango aplicado (tarjetas y gráfica usan las fechas filtradas retornadas por la API).
+- La tarjeta de Compras del dashboard usa el valor de entradas (cantidad x precio unitario) en el rango activo y lo muestra también en USD.
+
 # 2025-12-03
 - Filtros globales unificados: el dashboard, tarjetas, gráficas y CSV respetan Hoy/Semana/Mes o rangos personalizados con selector de fechas.
 - Endpoint `/api/usd-rate/` agregado con caché y fallback para convertir montos MXN↔USD desde el frontend.

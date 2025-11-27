@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import date
-from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db.models import Case, DecimalField, ExpressionWrapper, F, Sum, Value, When
@@ -70,6 +69,11 @@ def get_dashboard_metrics(start: date | None = None, end: date | None = None) ->
     if end:
         movements = movements.filter(date__lte=end)
 
+    movement_value = _movement_value_expression()
+    purchases_aggregates = movements.filter(movement_type=Movement.MovementType.IN).aggregate(
+        purchases=Coalesce(Sum(movement_value), Value(0), output_field=MONEY_FIELD)
+    )
+
     totals = calculate_totals(movements)
     low_stock_count = Product.objects.filter(stock__lte=F('low_threshold')).count()
     product_count = Product.objects.count()
@@ -82,6 +86,9 @@ def get_dashboard_metrics(start: date | None = None, end: date | None = None) ->
         ),
     )
     rate = get_usd_to_mxn_rate()
+
+    purchases_mxn = _quantize(purchases_aggregates['purchases'] or Decimal('0'))
+    purchases_usd = _convert_mxn_to_usd(purchases_mxn, rate)
 
     ingresos_usd = _convert_mxn_to_usd(totals['ingresos_mxn'], rate)
     egresos_usd = _convert_mxn_to_usd(totals['egresos_mxn'], rate)
@@ -97,6 +104,8 @@ def get_dashboard_metrics(start: date | None = None, end: date | None = None) ->
         'ingresos_usd': ingresos_usd,
         'egresos_usd': egresos_usd,
         'balance_usd': balance_usd,
+        'purchases_mxn': purchases_mxn,
+        'purchases_usd': purchases_usd,
     }
 
 

@@ -21,6 +21,7 @@ interface DashboardResponse {
   ingresos_mxn: number;
   egresos_mxn: number;
   balance_mxn: number;
+  purchases_mxn?: number;
   low_stock_count: number;
   product_count: number;
   total_stock_units: number;
@@ -29,6 +30,7 @@ interface DashboardResponse {
   ingresos_usd: number;
   egresos_usd: number;
   balance_usd: number;
+  purchases_usd?: number;
 }
 
 interface ReportPoint {
@@ -247,7 +249,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       return [];
     }
     const ingresosUsd = convertToUsd(dashboardData.ingresos_mxn);
-    const egresosUsd = convertToUsd(dashboardData.egresos_mxn);
+    const comprasMxn = dashboardData.purchases_mxn ?? dashboardData.egresos_mxn;
+    const egresosUsd = convertToUsd(comprasMxn);
     const balanceUsd = convertToUsd(dashboardData.balance_mxn);
     return [
       {
@@ -264,8 +267,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       {
         key: 'compras',
         title: 'Compras',
-        value: formatCurrency(dashboardData.egresos_mxn, 'MXN'),
-        description: `${formatCurrency(egresosUsd, 'USD')} USD`,
+        value: formatCurrency(comprasMxn, 'MXN'),
+        description: `${formatCurrency(dashboardData.purchases_usd ?? egresosUsd, 'USD')} USD`,
         icon: TrendingDown,
         color: '#F87171',
         bgGradient: 'radial-gradient(circle at top right, rgba(248, 113, 113, 0.18) 0%, transparent 75%)',
