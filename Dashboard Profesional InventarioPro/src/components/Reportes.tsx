@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, Calendar, TrendingUp, DollarSign, ArrowUpDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Input } from './ui/input';
 import { apiFetch } from '../lib/api';
+import { useGlobalFilters } from '../lib/filters';
+import { GlobalFilters } from './GlobalFilters';
 
 interface ReportesProps {
   filter?: any;
@@ -34,25 +35,16 @@ function formatCurrency(value: number, currency: 'MXN' | 'USD' = 'MXN') {
   return value.toLocaleString('es-MX', { style: 'currency', currency });
 }
 
-function getDefaultStartDate(daysBack: number) {
-  const date = new Date();
-  date.setDate(date.getDate() - daysBack);
-  return date.toISOString().slice(0, 10);
-}
-
 export function Reportes({ filter }: ReportesProps) {
-  const [fechaInicio, setFechaInicio] = useState(getDefaultStartDate(30));
-  const [fechaFin, setFechaFin] = useState(new Date().toISOString().slice(0, 10));
+  const { range } = useGlobalFilters();
   const [reportData, setReportData] = useState<ReportsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeMetric, setActiveMetric] = useState<'ingresos' | 'egresos' | 'balance' | 'usd'>('ingresos');
-  const [appliedRange, setAppliedRange] = useState({ from: fechaInicio, to: fechaFin });
 
   useEffect(() => {
-    loadReport(fechaInicio, fechaFin);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    loadReport(range.from, range.to);
+  }, [range]);
 
   useEffect(() => {
     if (filter?.view) {
@@ -71,7 +63,6 @@ export function Reportes({ filter }: ReportesProps) {
       const params = new URLSearchParams({ from, to });
       const data = await apiFetch<ReportsResponse>(`/api/reports/?${params.toString()}`);
       setReportData(data);
-      setAppliedRange({ from, to });
     } catch (err) {
       console.error(err);
       setError('No se pudieron cargar los reportes');
@@ -79,10 +70,6 @@ export function Reportes({ filter }: ReportesProps) {
       setLoading(false);
     }
   }
-
-  const handleApplyFilters = () => {
-    loadReport(fechaInicio, fechaFin);
-  };
 
   const chartData = useMemo(() => {
     if (!reportData) return [];
@@ -109,7 +96,7 @@ export function Reportes({ filter }: ReportesProps) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `reportes_inventario_${appliedRange.from}_a_${appliedRange.to}.csv`);
+    link.setAttribute('download', `reportes_inventario_${range.from}_a_${range.to}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -151,7 +138,7 @@ export function Reportes({ filter }: ReportesProps) {
         key: 'usd' as const,
         title: 'Conversión USD',
         value: `${formatCurrency(reportData.balance_usd, 'USD')}`,
-        change: `TC: ${reportData.usd_rate.toFixed(4)}`,
+        change: `USD→MXN: ${reportData.usd_rate.toFixed(4)}`,
         icon: DollarSign,
         color: '#FBBF24'
       }
@@ -191,50 +178,13 @@ export function Reportes({ filter }: ReportesProps) {
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
         }}
       >
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-4 flex-wrap justify-between">
           <div className="flex items-center gap-2" style={{ color: '#E0E0E0' }}>
             <Calendar className="w-5 h-5" style={{ color: '#3A86FF' }} />
-            <span>Rango de fechas:</span>
+            <span>Filtros globales</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Input
-              type="date"
-              value={fechaInicio}
-              max={fechaFin}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              style={{
-                background: 'rgba(58, 134, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#E0E0E0'
-              }}
-            />
-            <span style={{ color: '#A8A8A8' }}>hasta</span>
-            <Input
-              type="date"
-              value={fechaFin}
-              min={fechaInicio}
-              onChange={(e) => setFechaFin(e.target.value)}
-              style={{
-                background: 'rgba(58, 134, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#E0E0E0'
-              }}
-            />
-          </div>
-
-          <button
-            className="px-6 py-2 rounded-lg transition-all duration-200"
-            style={{
-              background: 'linear-gradient(135deg, #3A86FF 0%, #4CC9F0 100%)',
-              color: '#FFFFFF',
-              boxShadow: '0 4px 12px rgba(58, 134, 255, 0.3)'
-            }}
-            onClick={handleApplyFilters}
-            disabled={loading}
-          >
-            Aplicar
-          </button>
+          <GlobalFilters />
         </div>
         {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
       </div>

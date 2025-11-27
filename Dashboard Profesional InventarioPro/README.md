@@ -52,6 +52,8 @@ Configura la variable `VITE_API_URL` en `.env.local`:
 VITE_API_URL=http://localhost:8000
 ```
 
+También puedes copiar el archivo `.env.example` de la raíz para configurar tanto el frontend como el backend (incluye la clave de tipo de cambio y la URL base del API de tasas USD → MXN).
+
 Si no existe el archivo, crea uno llamado `.env.local` en la carpeta `src` con la variable anterior.
 
 Inicia el servidor de desarrollo:
@@ -85,6 +87,7 @@ probar las métricas del dashboard y los reportes.
 | GET | `/api/inventory/` | Resumen de inventario por categoría + listado de productos. |
 | GET/POST | `/api/movements/` | Movimientos de inventario (entradas/salidas). Filtros: `product`, `start`, `end`, `limit`. |
 | GET | `/api/dashboard/` | Totales de ventas, compras, balance, stock y valor inventario. |
+| GET | `/api/usd-rate/` | Tasa USD → MXN con caché y conversión inversa. |
 | GET | `/api/reports/?from=YYYY-MM-DD&to=YYYY-MM-DD` | Series para gráficas y totales por rango. |
 | GET/POST | `/api/services/` | Endpoint deshabilitado en la interfaz: el panel dejó de exponer servicios. |
 | GET/PATCH/DELETE | `/api/services/{id}/` | Endpoint sin uso en el frontend. |
@@ -111,10 +114,11 @@ python profiling/performance_inventory.py
 
 Se imprime el tiempo de cada versión sobre los movimientos existentes en la base de datos.
 
-## Configuración básica
+## Filtros y conversión de divisas
 
-La sección "Configuración" del frontend guarda únicamente la preferencia de
-alertas de inventario en `localStorage` para activar recordatorios de stock bajo.
+- Los filtros globales (Hoy, Semana, Mes, Rango y rango personalizado) gobiernan el dashboard y la vista de reportes, además de aplicarse a las exportaciones CSV.
+- El backend expone `/api/usd-rate/` que usa la API de ExchangeRate para obtener la tasa USD → MXN con caché y un fallback configurable.
+- Las métricas en MXN y USD se recalculan según el rango elegido y la tasa vigente.
 
 ## Estructura del proyecto
 

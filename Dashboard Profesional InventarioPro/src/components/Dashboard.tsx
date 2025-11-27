@@ -11,6 +11,8 @@ import {
   Legend
 } from 'recharts';
 import { apiFetch } from '../lib/api';
+import { useGlobalFilters } from '../lib/filters';
+import { GlobalFilters } from './GlobalFilters';
 
 interface DashboardProps {
   onNavigate: (section: string, filter?: any) => void;
@@ -72,13 +74,6 @@ interface MetricCard {
 
 const circumference = 2 * Math.PI * 40;
 
-const periodMap: Record<string, { view: 'day' | 'week' | 'month'; days: number }> = {
-  Hoy: { view: 'day', days: 0 },
-  Semana: { view: 'week', days: 6 },
-  Mes: { view: 'month', days: 29 },
-  Rango: { view: 'month', days: 89 }
-};
-
 const CATEGORY_LABELS: Record<string, string> = {
   consoles: 'Consolas',
   gaming_pcs: 'PCs gamer',
@@ -100,8 +95,7 @@ function formatDateLabel(value: string) {
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState<'Hoy' | 'Semana' | 'Mes' | 'Rango'>('Semana');
-  const [chartView, setChartView] = useState<'day' | 'week' | 'month'>(periodMap['Semana'].view);
+  const { period: selectedPeriod, range } = useGlobalFilters();
   const [dashboardData, setDashboardData] = useState<DashboardResponse | null>(null);
   const [reportData, setReportData] = useState<ReportsResponse | null>(null);
   const [recentMovements, setRecentMovements] = useState<MovementResponse[]>([]);
@@ -109,6 +103,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [cardsPerPage, setCardsPerPage] = useState(4);
+  const [usdRate, setUsdRate] = useState<number | null>(null);
 
   useEffect(() => {
     function syncCardsPerPage() {
@@ -130,17 +125,20 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     async function loadDashboard() {
       try {
         setLoading(true);
-        const [dashboardResponse, movementResponse] = await Promise.all([
-          apiFetch<DashboardResponse>('/api/dashboard/'),
+        const params = new URLSearchParams({ from: range.from, to: range.to });
+        const [dashboardResponse, movementResponse, reportResponse] = await Promise.all([
+          apiFetch<DashboardResponse>(`/api/dashboard/?${params.toString()}`),
           apiFetch<MovementResponse[] | { results: MovementResponse[] }>(
-            '/api/movements/?page_size=10'
-          )
+            `/api/movements/?${params.toString()}&limit=5`
+          ),
+          apiFetch<ReportsResponse>(`/api/reports/?${params.toString()}`)
         ]);
         const movementList = Array.isArray(movementResponse)
           ? movementResponse
           : movementResponse?.results ?? [];
         setDashboardData(dashboardResponse);
         setRecentMovements(movementList.slice(0, 5));
+        setReportData(reportResponse);
         setError(null);
       } catch (err) {
         console.error(err);
@@ -151,31 +149,22 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     }
 
     loadDashboard();
-  }, []);
+  }, [range]);
 
   useEffect(() => {
-    async function loadReport(period: 'Hoy' | 'Semana' | 'Mes' | 'Rango') {
+    async function loadUsdRate() {
       try {
-        const { days, view } = periodMap[period];
-        setChartView(view);
-        const end = new Date();
-        const start = new Date(end);
-        start.setDate(end.getDate() - days);
-        const params = new URLSearchParams({
-          from: start.toISOString().slice(0, 10),
-          to: end.toISOString().slice(0, 10)
-        });
-        const data = await apiFetch<ReportsResponse>(`/api/reports/?${params.toString()}`);
-        setReportData(data);
-        setError(null);
+        const rateResponse = await apiFetch<{ usd_to_mxn: number }>('/api/usd-rate/');
+        if (typeof rateResponse?.usd_to_mxn === 'number') {
+          setUsdRate(rateResponse.usd_to_mxn);
+        }
       } catch (err) {
         console.error(err);
-        setError('No se pudo cargar el reporte');
       }
     }
 
-    loadReport(selectedPeriod);
-  }, [selectedPeriod]);
+    loadUsdRate();
+  }, []);
 
   const chartData = useMemo(() => {
     if (!reportData) return [];
@@ -237,12 +226,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         onAction: () => onNavigate('reportes', { view: 'balance' })
       }
     ];
-  }, [dashboardData, onNavigate]);
+  }, [dashboardData, onNavigate, usdRate]);
 
   const inventoryMetrics = useMemo<MetricCard[]>(() => {
     if (!dashboardData) {
       return [];
     }
+    const activeUsdRate = usdRate ?? dashboardData.usd_rate ?? 0;
     return [
       {
         key: 'productos',
@@ -273,7 +263,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         key: 'valor_inventario',
         title: 'Valor inventario',
         value: formatCurrency(dashboardData.inventory_value_mxn, 'MXN'),
-        description: `Tasa USD ${dashboardData.usd_rate.toFixed(4)}`,
+        description:
+          activeUsdRate > 0
+            ? `Tasa USD→MXN ${activeUsdRate.toFixed(4)}`
+            : 'Tasa USD no disponible',
         icon: Wallet,
         color: '#F97316',
         bgGradient: 'radial-gradient(circle at top right, rgba(249, 115, 22, 0.18) 0%, transparent 75%)',
@@ -324,27 +317,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {(['Hoy', 'Semana', 'Mes', 'Rango'] as const).map((period) => (
-            <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className="px-4 py-2 rounded-lg transition-all duration-200"
-              style={{
-                background:
-                  selectedPeriod === period
-                    ? 'linear-gradient(135deg, #3A86FF 0%, #4CC9F0 100%)'
-                    : 'rgba(58, 134, 255, 0.1)',
-                color: selectedPeriod === period ? '#FFFFFF' : '#A8A8A8',
-                fontSize: '0.875rem',
-                boxShadow:
-                  selectedPeriod === period ? '0 4px 12px rgba(58, 134, 255, 0.3)' : 'none'
-              }}
-            >
-              {period}
-            </button>
-          ))}
-        </div>
+        <GlobalFilters />
       </div>
 
       {error && (
@@ -477,29 +450,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {(['day', 'week', 'month'] as const).map((view) => (
-              <button
-                key={view}
-                onClick={() => {
-                  const entry = Object.entries(periodMap).find(([, value]) => value.view === view);
-                  if (entry) {
-                    setSelectedPeriod(entry[0] as 'Hoy' | 'Semana' | 'Mes' | 'Rango');
-                  } else {
-                    setChartView(view);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg transition-all duration-200"
-                style={{
-                  background: chartView === view ? '#3A86FF' : 'rgba(58, 134, 255, 0.1)',
-                  color: chartView === view ? '#FFFFFF' : '#A8A8A8',
-                  fontSize: '0.875rem'
-                }}
-              >
-                {view === 'day' ? 'Día' : view === 'week' ? 'Semana' : 'Mes'}
-              </button>
-            ))}
-          </div>
+          <GlobalFilters />
         </div>
 
         <ResponsiveContainer width="100%" height={300}>

@@ -6,7 +6,6 @@ import { Dashboard } from './components/Dashboard';
 import { Productos } from './components/Productos';
 import { Movimientos } from './components/Movimientos';
 import { Reportes } from './components/Reportes';
-import { Configuracion } from './components/Configuracion';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { LoginScreen } from './components/LoginScreen';
 
@@ -47,8 +46,6 @@ export default function App() {
         return <Movimientos filter={navigationFilter} />;
       case 'reportes':
         return <Reportes filter={navigationFilter} />;
-      case 'configuracion':
-        return <Configuracion section={navigationFilter?.section} />;
       default:
         return <Dashboard onNavigate={handleNavigate} />;
     }

@@ -7,7 +7,7 @@ from django.db.models import Case, DecimalField, ExpressionWrapper, F, Sum, Valu
 from django.db.models.functions import Coalesce
 
 from inventory.models import Movement, Product
-from .currency import get_mxn_to_usd_rate
+from .currency import get_mxn_to_usd_rate, get_usd_to_mxn_rate
 
 MONEY_FIELD = DecimalField(max_digits=18, decimal_places=2)
 
@@ -56,8 +56,14 @@ def calculate_totals(movements) -> dict[str, Decimal]:
     }
 
 
-def get_dashboard_metrics() -> dict[str, Decimal | int]:
-    totals = calculate_totals(Movement.objects.all())
+def get_dashboard_metrics(start: date | None = None, end: date | None = None) -> dict[str, Decimal | int]:
+    movements = Movement.objects.all()
+    if start:
+        movements = movements.filter(date__gte=start)
+    if end:
+        movements = movements.filter(date__lte=end)
+
+    totals = calculate_totals(movements)
     low_stock_count = Product.objects.filter(stock__lte=F('low_threshold')).count()
     product_count = Product.objects.count()
     product_totals = Product.objects.aggregate(
@@ -68,11 +74,12 @@ def get_dashboard_metrics() -> dict[str, Decimal | int]:
             output_field=MONEY_FIELD,
         ),
     )
-    rate = get_mxn_to_usd_rate()
+    usd_to_mxn = get_usd_to_mxn_rate()
+    mxn_to_usd = get_mxn_to_usd_rate()
 
-    ingresos_usd = _quantize(totals['ingresos_mxn'] * rate)
-    egresos_usd = _quantize(totals['egresos_mxn'] * rate)
-    balance_usd = _quantize(totals['balance_mxn'] * rate)
+    ingresos_usd = _quantize(totals['ingresos_mxn'] * mxn_to_usd)
+    egresos_usd = _quantize(totals['egresos_mxn'] * mxn_to_usd)
+    balance_usd = _quantize(totals['balance_mxn'] * mxn_to_usd)
 
     return {
         **totals,
@@ -80,7 +87,7 @@ def get_dashboard_metrics() -> dict[str, Decimal | int]:
         'product_count': product_count,
         'total_stock_units': _quantize(product_totals['total_stock'] or Decimal('0'), '0.01'),
         'inventory_value_mxn': _quantize(product_totals['inventory_value'] or Decimal('0')),
-        'usd_rate': _quantize(rate, '0.0001'),
+        'usd_rate': _quantize(usd_to_mxn, '0.0001'),
         'ingresos_usd': ingresos_usd,
         'egresos_usd': egresos_usd,
         'balance_usd': balance_usd,
@@ -90,7 +97,8 @@ def get_dashboard_metrics() -> dict[str, Decimal | int]:
 def get_range_report(start: date, end: date) -> dict:
     movements = Movement.objects.filter(date__gte=start, date__lte=end)
     totals = calculate_totals(movements)
-    rate = get_mxn_to_usd_rate()
+    usd_to_mxn = get_usd_to_mxn_rate()
+    mxn_to_usd = get_mxn_to_usd_rate()
 
     series_qs = (
         movements.values('date')
@@ -138,10 +146,10 @@ def get_range_report(start: date, end: date) -> dict:
     report = {
         'range': {'from': start.isoformat(), 'to': end.isoformat()},
         **totals,
-        'usd_rate': _quantize(rate, '0.0001'),
-        'ingresos_usd': _quantize(totals['ingresos_mxn'] * rate),
-        'egresos_usd': _quantize(totals['egresos_mxn'] * rate),
-        'balance_usd': _quantize(totals['balance_mxn'] * rate),
+        'usd_rate': _quantize(usd_to_mxn, '0.0001'),
+        'ingresos_usd': _quantize(totals['ingresos_mxn'] * mxn_to_usd),
+        'egresos_usd': _quantize(totals['egresos_mxn'] * mxn_to_usd),
+        'balance_usd': _quantize(totals['balance_mxn'] * mxn_to_usd),
         'series': series,
     }
     return report

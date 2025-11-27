@@ -47,8 +47,8 @@ export function UserMenu({ onNavigate, onLogout }: UserMenuProps) {
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)'
         }}
       >
-        <DropdownMenuItem 
-          onClick={() => onNavigate('configuracion', { section: 'perfil' })}
+        <DropdownMenuItem
+          onClick={() => onNavigate('dashboard')}
           className="cursor-pointer"
           style={{
             color: '#E0E0E0',
@@ -62,11 +62,11 @@ export function UserMenu({ onNavigate, onLogout }: UserMenuProps) {
           }}
         >
           <User className="w-4 h-4 mr-2" style={{ color: '#3A86FF' }} />
-          Perfil
+          Ver dashboard
         </DropdownMenuItem>
-        
+
         <DropdownMenuItem
-          onClick={() => onNavigate('configuracion')}
+          onClick={() => onNavigate('reportes')}
           className="cursor-pointer"
           style={{
             color: '#E0E0E0',
@@ -80,7 +80,7 @@ export function UserMenu({ onNavigate, onLogout }: UserMenuProps) {
           }}
         >
           <Settings className="w-4 h-4 mr-2" style={{ color: '#4CC9F0' }} />
-          Configuración
+          Reportes
         </DropdownMenuItem>
 
         <DropdownMenuSeparator style={{ background: 'rgba(255, 255, 255, 0.1)' }} />

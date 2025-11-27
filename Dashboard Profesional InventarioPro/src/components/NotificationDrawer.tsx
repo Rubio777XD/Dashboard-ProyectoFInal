@@ -61,9 +61,9 @@ export function NotificationDrawer({ open, onClose, onNavigate }: NotificationDr
       title: 'Respaldo completado',
       message: 'Copia de seguridad automática completada exitosamente',
       time: 'Hace 2 horas',
-      action: 'Ver en Configuración',
+      action: 'Ir al dashboard',
       onAction: () => {
-        onNavigate('configuracion', { section: 'database' });
+        onNavigate('dashboard');
         onClose();
       }
     }

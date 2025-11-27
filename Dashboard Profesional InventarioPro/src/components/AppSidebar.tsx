@@ -1,11 +1,4 @@
-import {
-  LayoutDashboard,
-  Package,
-  ArrowLeftRight,
-  FileText,
-  Settings,
-  LogOut
-} from 'lucide-react';
+import { LayoutDashboard, Package, ArrowLeftRight, FileText, LogOut } from 'lucide-react';
 
 interface AppSidebarProps {
   activeSection: string;
@@ -18,7 +11,6 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
     { id: 'productos', label: 'Productos', icon: Package },
     { id: 'movimientos', label: 'Movimientos', icon: ArrowLeftRight },
     { id: 'reportes', label: 'Reportes', icon: FileText },
-    { id: 'configuracion', label: 'Configuración', icon: Settings },
   ];
 
   return (

@@ -1,5 +1,11 @@
 # Historial de cambios
 
+# 2025-12-03
+- Filtros globales unificados (Hoy, Semana, Mes y Rango) aplicados a dashboard, gráficas y exportes CSV.
+- Rango personalizado con inputs de fecha integrados en las vistas y sin filtros locales en la gráfica de movimientos.
+- Endpoint real `/api/usd-rate/` con caché y fallback; frontend consume la tasa para mostrar la conversión USD → MXN.
+- Se elimina la sección de Configuración y sus rutas, manteniendo navegación limpia.
+
 # 2025-12-02
 - Dashboard convertido en carrusel responsivo de métricas (4 tarjetas por vista en escritorio).
 - Filtros de reportes validados, aplicados a métricas/gráficas y usados en la exportación CSV.
