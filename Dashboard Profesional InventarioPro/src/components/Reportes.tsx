@@ -89,7 +89,7 @@ export function Reportes({ filter }: ReportesProps) {
       ]);
       setReportData(data);
       setUsdRate(usdRateResponse?.rate ?? data.usd_rate ?? null);
-      setAppliedRange({ from, to });
+      setAppliedRange({ from: data.range.from, to: data.range.to });
     } catch (err) {
       console.error(err);
       setError('No se pudieron cargar los reportes');
