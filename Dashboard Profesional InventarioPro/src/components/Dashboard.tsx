@@ -211,8 +211,9 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   }, [dashboardData]);
 
   const marginPercent = useMemo(() => {
-    if (!dashboardData || dashboardData.ingresos_mxn === 0) return 0;
-    return Math.max(0, Math.min(100, (dashboardData.balance_mxn / dashboardData.ingresos_mxn) * 100));
+    if (!dashboardData || dashboardData.egresos_mxn === 0) return 0;
+    const profit = dashboardData.ingresos_mxn - dashboardData.egresos_mxn;
+    return (profit / dashboardData.egresos_mxn) * 100;
   }, [dashboardData]);
 
   const effectiveUsdRate = useMemo(() => {
