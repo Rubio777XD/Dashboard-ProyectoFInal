@@ -1,5 +1,11 @@
 # Historial de cambios
 
+# 2025-12-02
+- Dashboard convertido en carrusel responsivo de métricas (4 tarjetas por vista en escritorio).
+- Filtros de reportes validados, aplicados a métricas/gráficas y usados en la exportación CSV.
+- Historial reciente de movimientos limitado a las 4 transacciones más nuevas sin scroll interno.
+- Pantalla de Configuración alineada con el resto del layout (tarjeta centrada y espaciados consistentes).
+
 # 2025-11-30
 - Selects auditados para evitar valores vacíos; los `SelectItem` ahora exigen un `value` no vacío.
 - Pantalla de Configuración simplificada a alertas de inventario con tarjeta centrada y preferencia única.

@@ -59,6 +59,12 @@ export function Movimientos({ filter }: MovimientosProps) {
   const [movementDate, setMovementDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(true);
+  const recentMovements = useMemo(() => {
+    const sorted = [...movements].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    return sorted.slice(0, 4);
+  }, [movements]);
 
   useEffect(() => {
     async function loadData() {
@@ -362,8 +368,8 @@ export function Movimientos({ filter }: MovimientosProps) {
           }}
         >
           <h3 style={{ color: '#E0E0E0', fontSize: '1.125rem', marginBottom: '1rem' }}>Historial reciente</h3>
-          <div className="space-y-4 max-h-[520px] overflow-y-auto pr-2">
-            {movements.map((movement) => {
+          <div className="space-y-4">
+            {recentMovements.map((movement) => {
               const isEntrada = movement.movement_type === 'IN';
               const totalMovement = movement.quantity * movement.unit_price;
               const formattedDate = new Date(movement.date).toLocaleString('es-MX', {
