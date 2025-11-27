@@ -10,6 +10,7 @@ from inventory.views import (
     MovementViewSet,
     ProductViewSet,
     ReportsView,
+    UsdRateView,
 )
 
 router = DefaultRouter()
@@ -29,6 +30,7 @@ urlpatterns = [
     path('api/dashboard/', DashboardView.as_view(), name='dashboard'),
     path('api/inventory/', InventorySummaryView.as_view(), name='inventory-summary'),
     path('api/reports/', ReportsView.as_view(), name='reports'),
+    path('api/usd-rate/', UsdRateView.as_view(), name='usd-rate'),
     path('api/', include(router.urls)),
     re_path(r'^.*$', serve_frontend, name='frontend'),
 ]

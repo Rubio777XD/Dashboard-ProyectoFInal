@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
 from collections import defaultdict
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.db.models import F
@@ -10,6 +10,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from services.currency import get_usd_to_mxn_rate
 from services.reports import get_dashboard_metrics, get_range_report
 
 from .models import Movement, Product
@@ -71,7 +72,22 @@ class MovementViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.G
 
 class DashboardView(APIView):
     def get(self, request, *args, **kwargs):
-        metrics = get_dashboard_metrics()
+        start_param = request.query_params.get('from')
+        end_param = request.query_params.get('to')
+
+        if start_param and end_param:
+            start_date = parse_date(start_param)
+            end_date = parse_date(end_param)
+            if not start_date or not end_date:
+                return Response({'detail': 'Invalid date range'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            end_date = datetime.today().date()
+            start_date = end_date - timedelta(days=30)
+
+        if start_date > end_date:
+            return Response({'detail': 'Invalid date range'}, status=status.HTTP_400_BAD_REQUEST)
+
+        metrics = get_dashboard_metrics(start_date, end_date)
         return Response(normalize_payload(metrics))
 
 
@@ -130,3 +146,9 @@ class ReportsView(APIView):
 
         report = get_range_report(start_date, end_date)
         return Response(normalize_payload(report))
+
+
+class UsdRateView(APIView):
+    def get(self, request, *args, **kwargs):
+        rate = get_usd_to_mxn_rate()
+        return Response({'rate': float(rate)})

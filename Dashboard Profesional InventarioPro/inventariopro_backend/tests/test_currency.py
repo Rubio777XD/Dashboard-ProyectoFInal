@@ -15,18 +15,18 @@ class CurrencyServiceTests(SimpleTestCase):
 
     @mock.patch('services.currency.requests.get')
     def test_currency_client_returns_rate(self, mock_get):
-        mock_get.return_value.json.return_value = {'rates': {'USD': 0.0567}}
+        mock_get.return_value.json.return_value = {'conversion_rates': {'MXN': 17.5678}}
         mock_get.return_value.raise_for_status.return_value = None
-        rate = currency.get_mxn_to_usd_rate()
-        self.assertEqual(rate, Decimal('0.0567'))
+        rate = currency.get_usd_to_mxn_rate()
+        self.assertEqual(rate, Decimal('17.5678'))
 
     @mock.patch('services.currency.requests.get')
     def test_currency_client_returns_cached_on_error(self, mock_get):
-        mock_get.return_value.json.return_value = {'rates': {'USD': 0.0500}}
+        mock_get.return_value.json.return_value = {'conversion_rates': {'MXN': 18.1234}}
         mock_get.return_value.raise_for_status.return_value = None
-        first_rate = currency.get_mxn_to_usd_rate()
-        self.assertEqual(first_rate, Decimal('0.0500'))
+        first_rate = currency.get_usd_to_mxn_rate()
+        self.assertEqual(first_rate, Decimal('18.1234'))
 
         mock_get.side_effect = Exception('network error')
-        cached_rate = currency.get_mxn_to_usd_rate()
-        self.assertEqual(cached_rate, Decimal('0.0500'))
+        cached_rate = currency.get_usd_to_mxn_rate()
+        self.assertEqual(cached_rate, Decimal('18.1234'))

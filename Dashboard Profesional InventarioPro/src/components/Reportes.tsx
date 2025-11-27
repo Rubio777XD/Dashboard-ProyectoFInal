@@ -27,6 +27,19 @@ interface ReportsResponse {
   series: ReportPoint[];
 }
 
+interface UsdRateResponse {
+  rate: number;
+}
+
+interface MovementExportRow {
+  id: number;
+  movement_type: 'IN' | 'OUT';
+  quantity: number;
+  unit_price: number;
+  date: string;
+  product_detail?: { name?: string };
+}
+
 function formatCurrency(value: number, currency: 'MXN' | 'USD' = 'MXN') {
   if (!Number.isFinite(value)) {
     return currency === 'USD' ? '$0.00 USD' : '$0.00 MXN';
@@ -44,6 +57,7 @@ export function Reportes({ filter }: ReportesProps) {
   const [fechaInicio, setFechaInicio] = useState(getDefaultStartDate(30));
   const [fechaFin, setFechaFin] = useState(new Date().toISOString().slice(0, 10));
   const [reportData, setReportData] = useState<ReportsResponse | null>(null);
+  const [usdRate, setUsdRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeMetric, setActiveMetric] = useState<'ingresos' | 'egresos' | 'balance' | 'usd'>('ingresos');
@@ -69,8 +83,12 @@ export function Reportes({ filter }: ReportesProps) {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams({ from, to });
-      const data = await apiFetch<ReportsResponse>(`/api/reports/?${params.toString()}`);
+      const [data, usdRateResponse] = await Promise.all([
+        apiFetch<ReportsResponse>(`/api/reports/?${params.toString()}`),
+        apiFetch<UsdRateResponse>('/api/usd-rate/')
+      ]);
       setReportData(data);
+      setUsdRate(usdRateResponse?.rate ?? data.usd_rate ?? null);
       setAppliedRange({ from, to });
     } catch (err) {
       console.error(err);
@@ -93,38 +111,66 @@ export function Reportes({ filter }: ReportesProps) {
     }));
   }, [reportData]);
 
-  function handleExport() {
+  const effectiveUsdRate = useMemo(() => {
+    if (usdRate && usdRate > 0) return usdRate;
+    if (reportData?.usd_rate && reportData.usd_rate > 0) return reportData.usd_rate;
+    return 0;
+  }, [reportData, usdRate]);
+
+  const convertToUsd = (value: number) => {
+    if (!effectiveUsdRate || effectiveUsdRate <= 0) return 0;
+    return value / effectiveUsdRate;
+  };
+
+  async function handleExport() {
     if (!reportData) return;
-    const rows = [
-      ['Fecha', 'Ingresos MXN', 'Egresos MXN', 'Balance MXN'],
-      ...reportData.series.map((point) => [
-        point.date,
-        point.ingresos_mxn.toString(),
-        point.egresos_mxn.toString(),
-        point.balance_mxn.toString()
-      ])
-    ];
-    const csvContent = rows.map((row) => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `reportes_inventario_${appliedRange.from}_a_${appliedRange.to}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    try {
+      const params = new URLSearchParams({ start: appliedRange.from, end: appliedRange.to, limit: '1000' });
+      const movements = await apiFetch<MovementExportRow[] | { results: MovementExportRow[] }>(
+        `/api/movements/?${params.toString()}`
+      );
+      const movementList = Array.isArray(movements) ? movements : movements?.results ?? [];
+      const rows = [
+        ['Fecha', 'Tipo', 'Producto', 'Cantidad', 'Monto'],
+        ...movementList.map((movement) => {
+          const amount = movement.quantity * movement.unit_price;
+          return [
+            movement.date,
+            movement.movement_type === 'IN' ? 'ingreso' : 'egreso',
+            movement.product_detail?.name ?? 'Producto',
+            movement.quantity.toString(),
+            amount.toFixed(2)
+          ];
+        })
+      ];
+      const csvContent = rows.map((row) => row.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `reportes_inventario_${appliedRange.from}_a_${appliedRange.to}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo exportar el CSV');
+    }
   }
 
   const stats = useMemo(() => {
     if (!reportData) return [];
+    const ingresosUsd = convertToUsd(reportData.ingresos_mxn);
+    const egresosUsd = convertToUsd(reportData.egresos_mxn);
+    const balanceUsd = convertToUsd(reportData.balance_mxn);
     return [
       {
         id: 1,
         key: 'ingresos' as const,
         title: 'Total Ingresos',
         value: formatCurrency(reportData.ingresos_mxn, 'MXN'),
-        change: formatCurrency(reportData.ingresos_usd, 'USD'),
+        change: formatCurrency(ingresosUsd, 'USD'),
         icon: TrendingUp,
         color: '#4ADE80'
       },
@@ -133,7 +179,7 @@ export function Reportes({ filter }: ReportesProps) {
         key: 'egresos' as const,
         title: 'Total Egresos',
         value: formatCurrency(reportData.egresos_mxn, 'MXN'),
-        change: formatCurrency(reportData.egresos_usd, 'USD'),
+        change: formatCurrency(egresosUsd, 'USD'),
         icon: ArrowUpDown,
         color: '#F87171'
       },
@@ -142,7 +188,7 @@ export function Reportes({ filter }: ReportesProps) {
         key: 'balance' as const,
         title: 'Balance Neto',
         value: formatCurrency(reportData.balance_mxn, 'MXN'),
-        change: formatCurrency(reportData.balance_usd, 'USD'),
+        change: formatCurrency(balanceUsd, 'USD'),
         icon: DollarSign,
         color: '#4CC9F0'
       },
@@ -150,13 +196,13 @@ export function Reportes({ filter }: ReportesProps) {
         id: 4,
         key: 'usd' as const,
         title: 'Conversión USD',
-        value: `${formatCurrency(reportData.balance_usd, 'USD')}`,
-        change: `TC: ${reportData.usd_rate.toFixed(4)}`,
+        value: `${formatCurrency(balanceUsd, 'USD')}`,
+        change: effectiveUsdRate ? `TC: ${effectiveUsdRate.toFixed(4)}` : 'TC no disponible',
         icon: DollarSign,
         color: '#FBBF24'
       }
     ];
-  }, [reportData]);
+  }, [convertToUsd, effectiveUsdRate, reportData]);
 
   return (
     <div className="p-8 space-y-6" style={{ background: '#0B132B', minHeight: 'calc(100vh - 4rem)' }}>

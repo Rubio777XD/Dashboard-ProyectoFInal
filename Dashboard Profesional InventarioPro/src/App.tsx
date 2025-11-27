@@ -6,7 +6,6 @@ import { Dashboard } from './components/Dashboard';
 import { Productos } from './components/Productos';
 import { Movimientos } from './components/Movimientos';
 import { Reportes } from './components/Reportes';
-import { Configuracion } from './components/Configuracion';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { LoginScreen } from './components/LoginScreen';
 
@@ -17,12 +16,14 @@ export default function App() {
   const [navigationFilter, setNavigationFilter] = useState<any>(null);
 
   const handleSectionChange = (section: string) => {
-    setActiveSection(section);
+    const safeSection = section === 'configuracion' ? 'dashboard' : section;
+    setActiveSection(safeSection);
     setNavigationFilter(null);
   };
 
   const handleNavigate = (section: string, filter?: any) => {
-    setActiveSection(section);
+    const safeSection = section === 'configuracion' ? 'dashboard' : section;
+    setActiveSection(safeSection);
     setNavigationFilter(filter || null);
   };
 
@@ -47,8 +48,6 @@ export default function App() {
         return <Movimientos filter={navigationFilter} />;
       case 'reportes':
         return <Reportes filter={navigationFilter} />;
-      case 'configuracion':
-        return <Configuracion section={navigationFilter?.section} />;
       default:
         return <Dashboard onNavigate={handleNavigate} />;
     }

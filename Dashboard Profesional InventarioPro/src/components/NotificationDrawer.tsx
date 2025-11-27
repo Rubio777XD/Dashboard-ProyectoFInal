@@ -63,7 +63,7 @@ export function NotificationDrawer({ open, onClose, onNavigate }: NotificationDr
       time: 'Hace 2 horas',
       action: 'Ver en Configuración',
       onAction: () => {
-        onNavigate('configuracion', { section: 'database' });
+        onNavigate('dashboard');
         onClose();
       }
     }

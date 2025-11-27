@@ -15,7 +15,7 @@ from services import reports
 
 class ReportCalculationsTests(TestCase):
     def setUp(self):
-        rate_patcher = patch('services.reports.get_mxn_to_usd_rate', return_value=Decimal('0.05'))
+        rate_patcher = patch('services.reports.get_usd_to_mxn_rate', return_value=Decimal('18.00'))
         self.addCleanup(rate_patcher.stop)
         rate_patcher.start()
 
@@ -79,7 +79,7 @@ class ReportCalculationsTests(TestCase):
 
 class ReportEndpointsTests(TestCase):
     def setUp(self):
-        rate_patcher = patch('services.reports.get_mxn_to_usd_rate', return_value=Decimal('0.05'))
+        rate_patcher = patch('services.reports.get_usd_to_mxn_rate', return_value=Decimal('18.00'))
         self.addCleanup(rate_patcher.stop)
         rate_patcher.start()
 
