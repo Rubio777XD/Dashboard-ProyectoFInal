@@ -1,5 +1,10 @@
 # Historial de cambios
 
+# 2025-11-30
+- Selects auditados para evitar valores vacíos; los `SelectItem` ahora exigen un `value` no vacío.
+- Pantalla de Configuración simplificada a alertas de inventario con tarjeta centrada y preferencia única.
+- Módulo de Servicios retirado (componente eliminado y endpoints desregistrados en backend).
+
 # 2025-11-29
 - Se ocultó el módulo de Servicios en el sidebar, enrutado y documentación; endpoints marcados como fuera de uso y pruebas XFAIL.
 - Configuración simplificada a un único interruptor de alertas con tarjeta centrada y estilo consistente.
