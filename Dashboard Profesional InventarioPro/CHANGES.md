@@ -1,5 +1,10 @@
 # Historial de cambios
 
+# 2025-11-28
+- Icono `Filter` importado correctamente en el Dashboard para evitar errores en tiempo de ejecución.
+- Valores de `SelectItem` estandarizados en Productos y Servicios para que Radix no reciba cadenas vacías.
+- Favicon agregado y referenciado desde `index.html` para eliminar el 404 del recurso.
+
 # 2025-11-27
 - Validaciones de inventario endurecidas (cantidades > 0 y sin stock negativo).
 - Unicidad lógica del nombre de servicios y mensaje claro en API.

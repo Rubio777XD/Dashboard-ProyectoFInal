@@ -72,7 +72,7 @@ export function Productos({ filter }: ProductosProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [onlyLowStock, setOnlyLowStock] = useState(filter?.filter === 'bajo-stock');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   useEffect(() => {
     loadProducts();
@@ -173,7 +173,7 @@ export function Productos({ filter }: ProductosProps) {
       if (onlyLowStock && !product.is_low_stock) {
         return false;
       }
-      if (categoryFilter && product.category !== categoryFilter) {
+      if (categoryFilter !== 'all' && product.category !== categoryFilter) {
         return false;
       }
       if (!term) return true;
@@ -252,7 +252,7 @@ export function Productos({ filter }: ProductosProps) {
                   color: '#E0E0E0'
                 }}
               >
-                <SelectItem value="">
+                <SelectItem value="all">
                   Todas las categorías
                 </SelectItem>
                 {CATEGORY_OPTIONS.map((option) => (
