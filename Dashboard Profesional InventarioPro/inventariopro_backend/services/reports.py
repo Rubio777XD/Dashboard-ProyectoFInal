@@ -16,17 +16,22 @@ def _movement_value_expression() -> ExpressionWrapper:
     return ExpressionWrapper(F('quantity') * F('unit_price'), output_field=MONEY_FIELD)
 
 
+def _movement_cost_expression() -> ExpressionWrapper:
+    return ExpressionWrapper(F('quantity') * F('product__avg_cost'), output_field=MONEY_FIELD)
+
+
 def _quantize(value: Decimal, places: str = '0.01') -> Decimal:
     return value.quantize(Decimal(places), rounding=ROUND_HALF_UP)
 
 
 def calculate_totals(movements) -> dict[str, Decimal]:
-    value_expression = _movement_value_expression()
+    sale_value = _movement_value_expression()
+    cost_value = _movement_cost_expression()
     aggregates = movements.aggregate(
         ingresos=Coalesce(
             Sum(
                 Case(
-                    When(movement_type=Movement.MovementType.OUT, then=value_expression),
+                    When(movement_type=Movement.MovementType.OUT, then=sale_value),
                     default=Value(0),
                     output_field=MONEY_FIELD,
                 )
@@ -37,7 +42,7 @@ def calculate_totals(movements) -> dict[str, Decimal]:
         egresos=Coalesce(
             Sum(
                 Case(
-                    When(movement_type=Movement.MovementType.IN, then=value_expression),
+                    When(movement_type=Movement.MovementType.OUT, then=cost_value),
                     default=Value(0),
                     output_field=MONEY_FIELD,
                 )
@@ -69,9 +74,9 @@ def get_dashboard_metrics(start: date | None = None, end: date | None = None) ->
     if end:
         movements = movements.filter(date__lte=end)
 
-    movement_value = _movement_value_expression()
+    purchase_cost_value = _movement_cost_expression()
     purchases_aggregates = movements.filter(movement_type=Movement.MovementType.IN).aggregate(
-        purchases=Coalesce(Sum(movement_value), Value(0), output_field=MONEY_FIELD)
+        purchases=Coalesce(Sum(purchase_cost_value), Value(0), output_field=MONEY_FIELD)
     )
 
     totals = calculate_totals(movements)
@@ -132,7 +137,7 @@ def get_range_report(start: date, end: date) -> dict:
             egresos=Coalesce(
                 Sum(
                     Case(
-                        When(movement_type=Movement.MovementType.IN, then=_movement_value_expression()),
+                        When(movement_type=Movement.MovementType.OUT, then=_movement_cost_expression()),
                         default=Value(0),
                         output_field=MONEY_FIELD,
                     )

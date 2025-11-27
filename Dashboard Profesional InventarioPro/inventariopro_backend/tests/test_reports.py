@@ -61,13 +61,13 @@ class ReportCalculationsTests(TestCase):
         start = timezone.now().date() - timedelta(days=7)
         end = timezone.now().date()
         totals = reports.get_range_report(start, end)
-        self.assertEqual(totals['egresos_mxn'], Decimal('100.00'))
+        self.assertEqual(totals['egresos_mxn'], Decimal('70.00'))
 
     def test_balance_calculation(self):
         start = timezone.now().date() - timedelta(days=7)
         end = timezone.now().date()
         totals = reports.get_range_report(start, end)
-        self.assertEqual(totals['balance_mxn'], Decimal('55.00'))
+        self.assertEqual(totals['balance_mxn'], Decimal('85.00'))
 
     def test_low_stock_detection(self):
         self.product.refresh_from_db()
