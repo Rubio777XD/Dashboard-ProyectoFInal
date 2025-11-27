@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
-from .models import Movement, Product, Service
+from .models import Movement, Product
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -66,27 +65,3 @@ class MovementSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'quantity': 'La salida dejaría el inventario en negativo.'})
         return attrs
 
-
-class ServiceSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(
-        validators=[
-            UniqueValidator(
-                queryset=Service.objects.all(),
-                message='Ya existe un servicio con este nombre. Usa otro para mantener el catálogo coherente.',
-            )
-        ]
-    )
-
-    class Meta:
-        model = Service
-        fields = [
-            'id',
-            'name',
-            'code',
-            'category',
-            'description',
-            'price',
-            'status',
-            'created_at',
-        ]
-        read_only_fields = ['created_at']
