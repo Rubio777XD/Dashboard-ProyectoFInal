@@ -11,6 +11,7 @@ import {
   Legend
 } from 'recharts';
 import { apiFetch } from '../lib/api';
+import { Input } from './ui/input';
 
 interface DashboardProps {
   onNavigate: (section: string, filter?: any) => void;
@@ -47,6 +48,10 @@ interface ReportsResponse {
   egresos_usd: number;
   balance_usd: number;
   usd_rate: number;
+}
+
+interface UsdRateResponse {
+  rate: number;
 }
 
 interface MovementResponse {
@@ -99,9 +104,24 @@ function formatDateLabel(value: string) {
   return date.toLocaleDateString('es-MX', { month: 'short', day: '2-digit' });
 }
 
+function getDefaultRange(daysBack: number) {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(end.getDate() - daysBack);
+  return {
+    from: start.toISOString().slice(0, 10),
+    to: end.toISOString().slice(0, 10)
+  };
+}
+
+function isRangeValid(range: { from: string; to: string }) {
+  return new Date(range.from) <= new Date(range.to);
+}
+
 export function Dashboard({ onNavigate }: DashboardProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<'Hoy' | 'Semana' | 'Mes' | 'Rango'>('Semana');
-  const [chartView, setChartView] = useState<'day' | 'week' | 'month'>(periodMap['Semana'].view);
+  const [customRange, setCustomRange] = useState(getDefaultRange(periodMap['Semana'].days));
+  const [rangeDraft, setRangeDraft] = useState(getDefaultRange(periodMap['Semana'].days));
   const [dashboardData, setDashboardData] = useState<DashboardResponse | null>(null);
   const [reportData, setReportData] = useState<ReportsResponse | null>(null);
   const [recentMovements, setRecentMovements] = useState<MovementResponse[]>([]);
@@ -109,6 +129,15 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [cardsPerPage, setCardsPerPage] = useState(4);
+  const [usdRate, setUsdRate] = useState<number | null>(null);
+
+  const activeRange = useMemo(() => {
+    if (selectedPeriod === 'Rango') {
+      return customRange;
+    }
+    const { days } = periodMap[selectedPeriod];
+    return getDefaultRange(days);
+  }, [customRange, selectedPeriod]);
 
   useEffect(() => {
     function syncCardsPerPage() {
@@ -127,21 +156,31 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   }, []);
 
   useEffect(() => {
-    async function loadDashboard() {
+    async function loadDashboard(range: { from: string; to: string }) {
+      if (!isRangeValid(range)) {
+        setError('El rango de fechas no es válido');
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-        const [dashboardResponse, movementResponse] = await Promise.all([
-          apiFetch<DashboardResponse>('/api/dashboard/'),
+        setError(null);
+        const params = new URLSearchParams({ from: range.from, to: range.to });
+        const [dashboardResponse, movementResponse, reportResponse, usdRateResponse] = await Promise.all([
+          apiFetch<DashboardResponse>(`/api/dashboard/?${params.toString()}`),
           apiFetch<MovementResponse[] | { results: MovementResponse[] }>(
-            '/api/movements/?page_size=10'
-          )
+            `/api/movements/?start=${range.from}&end=${range.to}&limit=10`
+          ),
+          apiFetch<ReportsResponse>(`/api/reports/?${params.toString()}`),
+          apiFetch<UsdRateResponse>('/api/usd-rate/')
         ]);
         const movementList = Array.isArray(movementResponse)
           ? movementResponse
           : movementResponse?.results ?? [];
+        setUsdRate(usdRateResponse?.rate ?? null);
         setDashboardData(dashboardResponse);
+        setReportData(reportResponse);
         setRecentMovements(movementList.slice(0, 5));
-        setError(null);
       } catch (err) {
         console.error(err);
         setError('No se pudo cargar el dashboard');
@@ -150,32 +189,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       }
     }
 
-    loadDashboard();
-  }, []);
-
-  useEffect(() => {
-    async function loadReport(period: 'Hoy' | 'Semana' | 'Mes' | 'Rango') {
-      try {
-        const { days, view } = periodMap[period];
-        setChartView(view);
-        const end = new Date();
-        const start = new Date(end);
-        start.setDate(end.getDate() - days);
-        const params = new URLSearchParams({
-          from: start.toISOString().slice(0, 10),
-          to: end.toISOString().slice(0, 10)
-        });
-        const data = await apiFetch<ReportsResponse>(`/api/reports/?${params.toString()}`);
-        setReportData(data);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        setError('No se pudo cargar el reporte');
-      }
-    }
-
-    loadReport(selectedPeriod);
-  }, [selectedPeriod]);
+    loadDashboard(activeRange);
+  }, [activeRange]);
 
   const chartData = useMemo(() => {
     if (!reportData) return [];
@@ -198,16 +213,48 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     return Math.max(0, Math.min(100, (dashboardData.balance_mxn / dashboardData.ingresos_mxn) * 100));
   }, [dashboardData]);
 
+  const effectiveUsdRate = useMemo(() => {
+    if (usdRate && usdRate > 0) return usdRate;
+    if (reportData?.usd_rate && reportData.usd_rate > 0) return reportData.usd_rate;
+    if (dashboardData?.usd_rate && dashboardData.usd_rate > 0) return dashboardData.usd_rate;
+    return 0;
+  }, [dashboardData, reportData, usdRate]);
+
+  const convertToUsd = (value: number) => {
+    if (!effectiveUsdRate || effectiveUsdRate <= 0) return 0;
+    return value / effectiveUsdRate;
+  };
+
+  const handlePeriodSelect = (period: 'Hoy' | 'Semana' | 'Mes' | 'Rango') => {
+    setError(null);
+    if (period === 'Rango') {
+      setRangeDraft(customRange);
+    }
+    setSelectedPeriod(period);
+  };
+
+  const handleApplyCustomRange = () => {
+    if (!isRangeValid(rangeDraft)) {
+      setError('El rango de fechas no es válido');
+      return;
+    }
+    setCustomRange(rangeDraft);
+    setSelectedPeriod('Rango');
+  };
+
   const financialMetrics = useMemo<MetricCard[]>(() => {
     if (!dashboardData) {
       return [];
     }
+    const ingresosUsd = convertToUsd(dashboardData.ingresos_mxn);
+    const egresosUsd = convertToUsd(dashboardData.egresos_mxn);
+    const balanceUsd = convertToUsd(dashboardData.balance_mxn);
     return [
       {
         key: 'ventas',
         title: 'Ventas',
         value: formatCurrency(dashboardData.ingresos_mxn, 'MXN'),
-        description: `${formatCurrency(dashboardData.ingresos_usd, 'USD')} USD`,
+        description: `${formatCurrency(ingresosUsd, 'USD')} USD`,
         icon: DollarSign,
         color: '#4ADE80',
         bgGradient: 'radial-gradient(circle at top right, rgba(74, 222, 128, 0.18) 0%, transparent 75%)',
@@ -218,7 +265,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         key: 'compras',
         title: 'Compras',
         value: formatCurrency(dashboardData.egresos_mxn, 'MXN'),
-        description: `${formatCurrency(dashboardData.egresos_usd, 'USD')} USD`,
+        description: `${formatCurrency(egresosUsd, 'USD')} USD`,
         icon: TrendingDown,
         color: '#F87171',
         bgGradient: 'radial-gradient(circle at top right, rgba(248, 113, 113, 0.18) 0%, transparent 75%)',
@@ -229,7 +276,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         key: 'balance',
         title: 'Balance',
         value: formatCurrency(dashboardData.balance_mxn, 'MXN'),
-        description: `${formatCurrency(dashboardData.balance_usd, 'USD')} USD`,
+        description: `${formatCurrency(balanceUsd, 'USD')} USD`,
         icon: Scale,
         color: '#4CC9F0',
         bgGradient: 'radial-gradient(circle at top right, rgba(76, 201, 240, 0.18) 0%, transparent 75%)',
@@ -273,7 +320,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         key: 'valor_inventario',
         title: 'Valor inventario',
         value: formatCurrency(dashboardData.inventory_value_mxn, 'MXN'),
-        description: `Tasa USD ${dashboardData.usd_rate.toFixed(4)}`,
+        description: `Tasa USD ${effectiveUsdRate ? effectiveUsdRate.toFixed(4) : '—'}`,
         icon: Wallet,
         color: '#F97316',
         bgGradient: 'radial-gradient(circle at top right, rgba(249, 115, 22, 0.18) 0%, transparent 75%)',
@@ -328,7 +375,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           {(['Hoy', 'Semana', 'Mes', 'Rango'] as const).map((period) => (
             <button
               key={period}
-              onClick={() => setSelectedPeriod(period)}
+              onClick={() => handlePeriodSelect(period)}
               className="px-4 py-2 rounded-lg transition-all duration-200"
               style={{
                 background:
@@ -346,6 +393,51 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           ))}
         </div>
       </div>
+
+      {selectedPeriod === 'Rango' && (
+        <div className="flex items-center gap-3 flex-wrap" style={{ color: '#E0E0E0' }}>
+          <div className="flex items-center gap-2">
+            <span style={{ color: '#A8A8A8' }}>Desde</span>
+            <Input
+              type="date"
+              value={rangeDraft.from}
+              max={rangeDraft.to}
+              onChange={(e) => setRangeDraft((prev) => ({ ...prev, from: e.target.value }))}
+              style={{
+                background: 'rgba(58, 134, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#E0E0E0'
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ color: '#A8A8A8' }}>Hasta</span>
+            <Input
+              type="date"
+              value={rangeDraft.to}
+              min={rangeDraft.from}
+              onChange={(e) => setRangeDraft((prev) => ({ ...prev, to: e.target.value }))}
+              style={{
+                background: 'rgba(58, 134, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#E0E0E0'
+              }}
+            />
+          </div>
+          <button
+            onClick={handleApplyCustomRange}
+            className="px-4 py-2 rounded-lg transition-all duration-200"
+            style={{
+              background: 'linear-gradient(135deg, #3A86FF 0%, #4CC9F0 100%)',
+              color: '#FFFFFF',
+              fontSize: '0.875rem',
+              boxShadow: '0 4px 12px rgba(58, 134, 255, 0.3)'
+            }}
+          >
+            Aplicar rango
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-200">
@@ -477,28 +569,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {(['day', 'week', 'month'] as const).map((view) => (
-              <button
-                key={view}
-                onClick={() => {
-                  const entry = Object.entries(periodMap).find(([, value]) => value.view === view);
-                  if (entry) {
-                    setSelectedPeriod(entry[0] as 'Hoy' | 'Semana' | 'Mes' | 'Rango');
-                  } else {
-                    setChartView(view);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg transition-all duration-200"
-                style={{
-                  background: chartView === view ? '#3A86FF' : 'rgba(58, 134, 255, 0.1)',
-                  color: chartView === view ? '#FFFFFF' : '#A8A8A8',
-                  fontSize: '0.875rem'
-                }}
-              >
-                {view === 'day' ? 'Día' : view === 'week' ? 'Semana' : 'Mes'}
-              </button>
-            ))}
+          <div className="flex items-center gap-2" style={{ color: '#A8A8A8', fontSize: '0.875rem' }}>
+            <span>Rango activo:</span>
+            <span style={{ color: '#E0E0E0' }}>
+              {activeRange.from} → {activeRange.to}
+            </span>
           </div>
         </div>
 
@@ -658,7 +733,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 color: '#A8A8A8',
                 fontSize: '0.875rem'
               }}
-              onClick={() => onNavigate('movimientos', { period: selectedPeriod })}
+              onClick={() => onNavigate('movimientos', { period: selectedPeriod, range: activeRange })}
             >
               <Filter className="w-4 h-4" />
               Filtrar

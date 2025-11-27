@@ -1,4 +1,4 @@
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { ChevronDown } from 'lucide-react';
@@ -47,8 +47,8 @@ export function UserMenu({ onNavigate, onLogout }: UserMenuProps) {
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)'
         }}
       >
-        <DropdownMenuItem 
-          onClick={() => onNavigate('configuracion', { section: 'perfil' })}
+        <DropdownMenuItem
+          onClick={() => onNavigate('dashboard')}
           className="cursor-pointer"
           style={{
             color: '#E0E0E0',
@@ -63,24 +63,6 @@ export function UserMenu({ onNavigate, onLogout }: UserMenuProps) {
         >
           <User className="w-4 h-4 mr-2" style={{ color: '#3A86FF' }} />
           Perfil
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem
-          onClick={() => onNavigate('configuracion')}
-          className="cursor-pointer"
-          style={{
-            color: '#E0E0E0',
-            padding: '0.75rem 1rem'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(58, 134, 255, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-          }}
-        >
-          <Settings className="w-4 h-4 mr-2" style={{ color: '#4CC9F0' }} />
-          Configuración
         </DropdownMenuItem>
 
         <DropdownMenuSeparator style={{ background: 'rgba(255, 255, 255, 0.1)' }} />

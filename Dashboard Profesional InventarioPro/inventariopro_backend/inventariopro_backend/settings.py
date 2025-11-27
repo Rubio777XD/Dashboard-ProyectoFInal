@@ -95,4 +95,7 @@ REST_FRAMEWORK = {
 }
 
 CURRENCY_CACHE_TIMEOUT = int(os.environ.get('CURRENCY_CACHE_TIMEOUT', 3600))
+EXCHANGE_API_KEY = os.environ.get('EXCHANGE_API_KEY', '')
+EXCHANGE_API_URL = os.environ.get('EXCHANGE_API_URL', 'https://v6.exchangerate-api.com/v6')
+USD_MXN_FALLBACK_RATE = os.environ.get('USD_MXN_FALLBACK_RATE', '18.0')
 FRONTEND_INDEX = BASE_DIR / 'frontend' / 'index.html'

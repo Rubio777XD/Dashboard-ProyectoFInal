@@ -52,6 +52,19 @@ Configura la variable `VITE_API_URL` en `.env.local`:
 VITE_API_URL=http://localhost:8000
 ```
 
+Puedes usar `.env.example` en la raíz como referencia rápida de variables del frontend y backend:
+
+```
+# FRONTEND
+VITE_API_URL=http://localhost:8000
+
+# BACKEND
+EXCHANGE_API_KEY=1ef9f0a47d56ed089717a835
+EXCHANGE_API_URL=https://v6.exchangerate-api.com/v6
+DJANGO_SECRET_KEY=changeme
+DEBUG=True
+```
+
 Si no existe el archivo, crea uno llamado `.env.local` en la carpeta `src` con la variable anterior.
 
 Inicia el servidor de desarrollo:
@@ -86,6 +99,7 @@ probar las métricas del dashboard y los reportes.
 | GET/POST | `/api/movements/` | Movimientos de inventario (entradas/salidas). Filtros: `product`, `start`, `end`, `limit`. |
 | GET | `/api/dashboard/` | Totales de ventas, compras, balance, stock y valor inventario. |
 | GET | `/api/reports/?from=YYYY-MM-DD&to=YYYY-MM-DD` | Series para gráficas y totales por rango. |
+| GET | `/api/usd-rate/` | Tasa USD→MXN con caché y fallback seguro. |
 | GET/POST | `/api/services/` | Endpoint deshabilitado en la interfaz: el panel dejó de exponer servicios. |
 | GET/PATCH/DELETE | `/api/services/{id}/` | Endpoint sin uso en el frontend. |
 
@@ -113,8 +127,9 @@ Se imprime el tiempo de cada versión sobre los movimientos existentes en la bas
 
 ## Configuración básica
 
-La sección "Configuración" del frontend guarda únicamente la preferencia de
-alertas de inventario en `localStorage` para activar recordatorios de stock bajo.
+La sección "Configuración" ya no está disponible en la interfaz. Las
+preferencias previas de alertas permanecen en `localStorage`, pero la navegación
+se redirige al dashboard.
 
 ## Estructura del proyecto
 
