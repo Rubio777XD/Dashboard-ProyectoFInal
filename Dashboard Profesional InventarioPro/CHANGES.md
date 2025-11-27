@@ -1,5 +1,11 @@
 # Historial de cambios
 
+# 2025-11-29
+- Se ocultó el módulo de Servicios en el sidebar, enrutado y documentación; endpoints marcados como fuera de uso y pruebas XFAIL.
+- Configuración simplificada a un único interruptor de alertas con tarjeta centrada y estilo consistente.
+- Dashboard reorganizado en un grid 4x3 (7 tarjetas) sin romper el contenido de cada métrica.
+- Revisados los Select de Productos para usar valores explícitos (sin cadenas vacías) y evitar errores de Radix.
+
 # 2025-11-28
 - Icono `Filter` importado correctamente en el Dashboard para evitar errores en tiempo de ejecución.
 - Valores de `SelectItem` estandarizados en Productos y Servicios para que Radix no reciba cadenas vacías.
