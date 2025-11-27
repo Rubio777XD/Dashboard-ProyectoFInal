@@ -47,6 +47,7 @@ export function Reportes({ filter }: ReportesProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeMetric, setActiveMetric] = useState<'ingresos' | 'egresos' | 'balance' | 'usd'>('ingresos');
+  const [appliedRange, setAppliedRange] = useState({ from: fechaInicio, to: fechaFin });
 
   useEffect(() => {
     loadReport(fechaInicio, fechaFin);
@@ -60,12 +61,17 @@ export function Reportes({ filter }: ReportesProps) {
   }, [filter]);
 
   async function loadReport(from: string, to: string) {
+    if (new Date(from) > new Date(to)) {
+      setError('El rango de fechas no es válido');
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams({ from, to });
       const data = await apiFetch<ReportsResponse>(`/api/reports/?${params.toString()}`);
       setReportData(data);
+      setAppliedRange({ from, to });
     } catch (err) {
       console.error(err);
       setError('No se pudieron cargar los reportes');
@@ -73,6 +79,10 @@ export function Reportes({ filter }: ReportesProps) {
       setLoading(false);
     }
   }
+
+  const handleApplyFilters = () => {
+    loadReport(fechaInicio, fechaFin);
+  };
 
   const chartData = useMemo(() => {
     if (!reportData) return [];
@@ -99,7 +109,7 @@ export function Reportes({ filter }: ReportesProps) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'reportes_inventario.csv');
+    link.setAttribute('download', `reportes_inventario_${appliedRange.from}_a_${appliedRange.to}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -220,7 +230,7 @@ export function Reportes({ filter }: ReportesProps) {
               color: '#FFFFFF',
               boxShadow: '0 4px 12px rgba(58, 134, 255, 0.3)'
             }}
-            onClick={() => loadReport(fechaInicio, fechaFin)}
+            onClick={handleApplyFilters}
             disabled={loading}
           >
             Aplicar

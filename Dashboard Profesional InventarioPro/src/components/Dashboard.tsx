@@ -107,6 +107,24 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [recentMovements, setRecentMovements] = useState<MovementResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [cardsPerPage, setCardsPerPage] = useState(4);
+
+  useEffect(() => {
+    function syncCardsPerPage() {
+      if (window.innerWidth >= 1280) {
+        setCardsPerPage(4);
+      } else if (window.innerWidth >= 768) {
+        setCardsPerPage(2);
+      } else {
+        setCardsPerPage(1);
+      }
+    }
+
+    syncCardsPerPage();
+    window.addEventListener('resize', syncCardsPerPage);
+    return () => window.removeEventListener('resize', syncCardsPerPage);
+  }, []);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -280,6 +298,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     return [...financialMetrics, ...inventoryMetrics];
   }, [financialMetrics, inventoryMetrics]);
 
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [cardsPerPage, dashboardCards.length]);
+
+  const totalPages = Math.max(1, Math.ceil(dashboardCards.length / cardsPerPage));
+  const startIndex = currentPage * cardsPerPage;
+  const visibleCards = dashboardCards.slice(startIndex, startIndex + cardsPerPage);
+
   if (loading) {
     return (
       <div className="p-8" style={{ background: '#0B132B', minHeight: 'calc(100vh - 4rem)' }}>
@@ -327,8 +353,48 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
       )}
 
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 text-sm" style={{ color: '#A8A8A8' }}>
+          <span>Métricas</span>
+          <span style={{ color: '#E0E0E0' }}>
+            {dashboardCards.length === 0
+              ? '0 de 0'
+              : `${startIndex + 1} - ${Math.min(startIndex + cardsPerPage, dashboardCards.length)} de ${dashboardCards.length}`}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
+            disabled={currentPage === 0}
+            className="px-3 py-2 rounded-lg border transition-all duration-200"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              color: currentPage === 0 ? '#556080' : '#E0E0E0',
+              cursor: currentPage === 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            ←
+          </button>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
+            disabled={currentPage >= totalPages - 1}
+            className="px-3 py-2 rounded-lg border transition-all duration-200"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              color: currentPage >= totalPages - 1 ? '#556080' : '#E0E0E0',
+              cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            →
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {dashboardCards.map((metric) => {
+        {visibleCards.map((metric) => {
           const Icon = metric.icon;
           return (
             <div
