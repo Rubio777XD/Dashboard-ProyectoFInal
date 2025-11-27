@@ -74,10 +74,22 @@ def get_dashboard_metrics(start: date | None = None, end: date | None = None) ->
     if end:
         movements = movements.filter(date__lte=end)
 
+    sale_value = _movement_value_expression()
     purchase_cost_value = _movement_cost_expression()
     purchases_aggregates = movements.filter(movement_type=Movement.MovementType.IN).aggregate(
         purchases=Coalesce(Sum(purchase_cost_value), Value(0), output_field=MONEY_FIELD)
     )
+
+    sales_aggregates = movements.filter(movement_type=Movement.MovementType.OUT).aggregate(
+        ingresos=Coalesce(Sum(sale_value), Value(0), output_field=MONEY_FIELD),
+        costo_ventas=Coalesce(Sum(purchase_cost_value), Value(0), output_field=MONEY_FIELD),
+    )
+    ingresos_total = sales_aggregates['ingresos'] or Decimal('0')
+    costo_ventas_total = sales_aggregates['costo_ventas'] or Decimal('0')
+    utilidad_mxn = ingresos_total - costo_ventas_total
+    profit_margin = Decimal('0')
+    if costo_ventas_total > 0:
+        profit_margin = (utilidad_mxn / costo_ventas_total) * Decimal('100')
 
     totals = calculate_totals(movements)
     low_stock_count = Product.objects.filter(stock__lte=F('low_threshold')).count()
@@ -111,14 +123,18 @@ def get_dashboard_metrics(start: date | None = None, end: date | None = None) ->
         'balance_usd': balance_usd,
         'purchases_mxn': purchases_mxn,
         'purchases_usd': purchases_usd,
+        'profit_margin': _quantize(profit_margin, '0.01'),
     }
 
 
-def get_range_report(start: date, end: date) -> dict:
+def get_range_report(start: date, end: date, product_id: int | None = None) -> dict:
     movements = Movement.objects.filter(date__gte=start, date__lte=end)
+    if product_id:
+        movements = movements.filter(product_id=product_id)
     totals = calculate_totals(movements)
     rate = get_usd_to_mxn_rate()
 
+    # Egresos se calculan usando el costo de compra (avg_cost) multiplicado por la cantidad de salidas.
     series_qs = (
         movements.values('date')
         .order_by('date')

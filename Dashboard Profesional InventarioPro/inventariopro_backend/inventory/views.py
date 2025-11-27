@@ -131,6 +131,7 @@ class ReportsView(APIView):
     def get(self, request, *args, **kwargs):
         start_param = request.query_params.get('from')
         end_param = request.query_params.get('to')
+        product_param = request.query_params.get('product')
 
         if start_param and end_param:
             start_date = parse_date(start_param)
@@ -144,7 +145,14 @@ class ReportsView(APIView):
         if start_date > end_date:
             return Response({'detail': 'Invalid date range'}, status=status.HTTP_400_BAD_REQUEST)
 
-        report = get_range_report(start_date, end_date)
+        product_id = None
+        if product_param:
+            try:
+                product_id = int(product_param)
+            except (TypeError, ValueError):
+                return Response({'detail': 'Invalid product id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        report = get_range_report(start_date, end_date, product_id=product_id)
         return Response(normalize_payload(report))
 
 

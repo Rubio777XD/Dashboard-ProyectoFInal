@@ -31,6 +31,7 @@ interface DashboardResponse {
   egresos_usd: number;
   balance_usd: number;
   purchases_usd?: number;
+  profit_margin?: number;
 }
 
 interface ReportPoint {
@@ -211,7 +212,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   }, [dashboardData]);
 
   const marginPercent = useMemo(() => {
-    if (!dashboardData || dashboardData.egresos_mxn === 0) return 0;
+    if (!dashboardData) return 0;
+    if (typeof dashboardData.profit_margin === 'number') {
+      return dashboardData.profit_margin;
+    }
+    if (dashboardData.egresos_mxn === 0) return 0;
     const profit = dashboardData.ingresos_mxn - dashboardData.egresos_mxn;
     return (profit / dashboardData.egresos_mxn) * 100;
   }, [dashboardData]);
