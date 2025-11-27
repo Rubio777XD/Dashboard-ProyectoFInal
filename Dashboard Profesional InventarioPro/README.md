@@ -86,8 +86,8 @@ probar las métricas del dashboard y los reportes.
 | GET/POST | `/api/movements/` | Movimientos de inventario (entradas/salidas). Filtros: `product`, `start`, `end`, `limit`. |
 | GET | `/api/dashboard/` | Totales de ventas, compras, balance, stock y valor inventario. |
 | GET | `/api/reports/?from=YYYY-MM-DD&to=YYYY-MM-DD` | Series para gráficas y totales por rango. |
-| GET/POST | `/api/services/` | CRUD de servicios con filtros `name`, `status`, `category`, `min_price`, `max_price` y `page_size`. |
-| GET/PATCH/DELETE | `/api/services/{id}/` | Detalle, edición y eliminación de servicios. |
+| GET/POST | `/api/services/` | Endpoint deshabilitado en la interfaz: el panel dejó de exponer servicios. |
+| GET/PATCH/DELETE | `/api/services/{id}/` | Endpoint sin uso en el frontend. |
 
 ## Pruebas
 
@@ -113,9 +113,8 @@ Se imprime el tiempo de cada versión sobre los movimientos existentes en la bas
 
 ## Configuración básica
 
-La sección "Configuración" del frontend guarda preferencias en `localStorage`
-(idioma, alertas y tamaño de página). El tamaño de página se usa en listados
-como Servicios para limitar resultados a la cantidad elegida.
+La sección "Configuración" del frontend guarda únicamente la preferencia de
+alertas de inventario en `localStorage` para activar recordatorios de stock bajo.
 
 ## Estructura del proyecto
 

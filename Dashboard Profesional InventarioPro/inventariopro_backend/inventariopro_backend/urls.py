@@ -10,13 +10,11 @@ from inventory.views import (
     MovementViewSet,
     ProductViewSet,
     ReportsView,
-    ServiceViewSet,
 )
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet, basename='product')
 router.register(r'movements', MovementViewSet, basename='movement')
-router.register(r'services', ServiceViewSet, basename='service')
 
 
 def serve_frontend(request):

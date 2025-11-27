@@ -49,6 +49,11 @@ const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: 'accessories', label: 'Merch & accesorios' }
 ];
 
+const CATEGORY_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: 'all', label: 'Todas las categorías' },
+  ...CATEGORY_OPTIONS,
+];
+
 const CATEGORY_LABELS = CATEGORY_OPTIONS.reduce<Record<string, string>>((acc, option) => {
   acc[option.value] = option.label;
   return acc;
@@ -234,7 +239,10 @@ export function Productos({ filter }: ProductosProps) {
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select
+              value={categoryFilter}
+              onValueChange={(value) => setCategoryFilter(value || 'all')}
+            >
               <SelectTrigger
                 className="sm:w-56"
                 style={{
@@ -252,10 +260,7 @@ export function Productos({ filter }: ProductosProps) {
                   color: '#E0E0E0'
                 }}
               >
-                <SelectItem value="all">
-                  Todas las categorías
-                </SelectItem>
-                {CATEGORY_OPTIONS.map((option) => (
+                {CATEGORY_FILTER_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

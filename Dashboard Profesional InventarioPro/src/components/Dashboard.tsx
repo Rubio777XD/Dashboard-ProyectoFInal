@@ -276,6 +276,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     ];
   }, [dashboardData, onNavigate]);
 
+  const dashboardCards = useMemo<MetricCard[]>(() => {
+    return [...financialMetrics, ...inventoryMetrics];
+  }, [financialMetrics, inventoryMetrics]);
+
   if (loading) {
     return (
       <div className="p-8" style={{ background: '#0B132B', minHeight: 'calc(100vh - 4rem)' }}>
@@ -323,76 +327,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {financialMetrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <div
-              key={metric.key}
-              className="rounded-xl p-6 transition-all duration-300 border"
-              style={{
-                background: '#1C2541',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-            >
-              <div style={{ background: metric.bgGradient, position: 'absolute', inset: 0 }} />
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center"
-                    style={{
-                      background: `${metric.color}20`,
-                      color: metric.color
-                    }}
-                  >
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <span
-                    className="px-2 py-1 rounded"
-                    style={{
-                      background: `${metric.color}25`,
-                      color: metric.color,
-                      fontSize: '0.75rem'
-                    }}
-                  >
-                    {metric.description}
-                  </span>
-                </div>
-
-                <div>
-                  <div style={{ color: '#A8A8A8', fontSize: '0.875rem' }}>{metric.title}</div>
-                  <div
-                    style={{ color: '#E0E0E0', fontSize: '1.75rem', fontWeight: 600, marginTop: '0.25rem' }}
-                  >
-                    {metric.value}
-                  </div>
-                </div>
-
-                {metric.onAction && (
-                  <button
-                    onClick={metric.onAction}
-                    className="w-full py-2 rounded-lg transition-all duration-200"
-                    style={{
-                      background: `${metric.color}15`,
-                      color: metric.color,
-                      fontSize: '0.875rem',
-                      border: `1px solid ${metric.color}40`
-                    }}
-                  >
-                    {metric.actionLabel ?? 'Ver detalles'}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {inventoryMetrics.map((metric) => {
+        {dashboardCards.map((metric) => {
           const Icon = metric.icon;
           return (
             <div

@@ -17,7 +17,6 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'productos', label: 'Productos', icon: Package },
     { id: 'movimientos', label: 'Movimientos', icon: ArrowLeftRight },
-    { id: 'servicios', label: 'Servicios', icon: Package },
     { id: 'reportes', label: 'Reportes', icon: FileText },
     { id: 'configuracion', label: 'Configuración', icon: Settings },
   ];
